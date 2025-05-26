@@ -15,8 +15,8 @@ export class UserController {
 
   async create(req: Request, res: Response) {
     // Create a new user object from the request body
-    const user = this.userRepo.create(req.body);
-
+    const user: User = this.userRepo.create(req.body as User);
+    
     // Save the new user to the database
     try {
       await this.userRepo.save(user);
