@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext2";
 import { useRouter } from "next/router";
 
 export default function Login() {
@@ -11,9 +11,9 @@ export default function Login() {
   const [showSuccess, setShowSuccess] = useState("");
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const loggedInUser = login(username, password);
+    const loggedInUser = await login(username, password);
     if (!loggedInUser) {
       setError("Incorrect Username or Password. Try Again.");
       setTimeout(() => setError(""), 2000);

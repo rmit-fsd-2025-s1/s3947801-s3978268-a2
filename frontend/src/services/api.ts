@@ -12,4 +12,10 @@ export const userService = {
     const res = await axios.post<User>(`${API_BASE_URL}/user`, user);
     return res.data; // This will be your new user (without password)
   },
+
+    login: async (credentials: { email: string; password: string }): Promise<User> => {
+    const res = await axios.post<User>(`${API_BASE_URL}/user/login`, credentials);
+    return res.data;
+  },
+  
 };

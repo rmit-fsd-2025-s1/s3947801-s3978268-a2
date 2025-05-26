@@ -16,7 +16,7 @@ export class UserController {
   async create(req: Request, res: Response) {
     // Create a new user object from the request body
     const user: User = this.userRepo.create(req.body as User);
-    
+
     // Save the new user to the database
     try {
       await this.userRepo.save(user);
@@ -28,5 +28,19 @@ export class UserController {
     // NEVER return the password field in the response
     const { password, ...userWithoutPassword } = user;
     res.status(201).json(userWithoutPassword);
+  }
+
+    async login(req: Request, res: Response) {
+          // Login a user object from the request body
+    const { email, password } = req.body;
+
+    const user = await this.userRepo.findOneBy({ email });
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const { password: _pw, ...userWithoutPassword } = user;
+    return res.json(userWithoutPassword);
   }
 }
