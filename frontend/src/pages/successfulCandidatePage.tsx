@@ -8,7 +8,7 @@ export default function SuccessfulCandidatePage() {
     const {chosenApplicant, getChosenApplicant, selectApplicant} = useApplicant();
     const router = useRouter();
     const { user } = useAuth();
-    const currentLecturer = user ? user.username : "Anonymous";
+    const currentLecturer = user ? user.email : "Anonymous";
     const [filteredCourse, setFilteredCourse] = useState<string | null>(null);
     const [courseNames, setCourseNames] = useState<string[]>([]);
     const [chosenApplicants, setChosenApplicants] = useState<ChosenApplicant[]>([]);

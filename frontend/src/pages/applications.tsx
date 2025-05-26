@@ -10,7 +10,7 @@ export default function ApplicationsPage() {
   useEffect(() => {
     const storedApps = JSON.parse(localStorage.getItem("applications") || "[]");
     if (user && user.accountType === "tutor") {
-      setApplications(storedApps.filter((app: any) => app.tutorName === user.username));
+      setApplications(storedApps.filter((app: any) => app.tutorName === user.email));
     } else {
       setApplications(storedApps);
       router.push("/"); // If user not tutor redirect page

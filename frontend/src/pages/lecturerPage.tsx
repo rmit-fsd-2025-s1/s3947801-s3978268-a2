@@ -8,7 +8,7 @@ export default function LecturerPage() {
   const { getApplicant, selectApplicant } = useApplicant();
   const router = useRouter();
   const { user } = useAuth();
-  const currentLecturer = user ? user.username : "Anonymous";
+  const currentLecturer = user ? user.email : "Anonymous";
   const searchQuery = ((router.query.search as string) || "").toLowerCase();
 
   const [allApplicants, setAllApplicants] = useState<Applicant[]>([]);
