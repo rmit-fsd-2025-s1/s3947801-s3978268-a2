@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   Column,
-  CreateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Course } from "./Course";
