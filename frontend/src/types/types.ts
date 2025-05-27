@@ -4,7 +4,10 @@ export interface User {
   password: string;          // will NOT be sent from API after login!
   accountType: "lecturer" | "tutor";
   date_joined: string;       // ISO date string from backend (e.g., "2023-05-26T14:45:00Z")
+
+  courses?: Course[];        // Add this line for assigned courses
 }
+
 
 
 export interface Application {
