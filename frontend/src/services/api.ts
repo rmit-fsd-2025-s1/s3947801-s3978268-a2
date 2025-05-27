@@ -17,5 +17,42 @@ export const userService = {
     const res = await axios.post<User>(`${API_BASE_URL}/user/login`, credentials);
     return res.data;
   },
-  
+
 };
+
+export const applicationService = {
+
+    getApplications: async (courseIds: number[]): Promise<Application[]> => {
+    const res = await axios.get<Application[]>(`${API_BASE_URL}/applications`, {
+      params: { courseIds: courseIds.join(",") },
+    });
+    return res.data;
+  },
+
+};
+
+export const CourseService = {
+
+};
+
+export const LecturerSelectionService = {
+
+    getSelectionsByLecturer: async (lecturerId: number): Promise<LecturerSelection[]> => {
+    const res = await axios.get<LecturerSelection[]>(`${API_BASE_URL}/lecturerSelections`, {
+      params: { lecturerId },
+    });
+    return res.data;
+  },
+
+    upsertSelection: async (selection: {
+    applicationId: number;
+    lecturerId: number;
+    comment?: string;
+    rank: string;
+  }): Promise<LecturerSelection> => {
+    const res = await axios.post<LecturerSelection>(`${API_BASE_URL}/lecturerSelections`, selection);
+    return res.data;
+  },
+
+};
+
