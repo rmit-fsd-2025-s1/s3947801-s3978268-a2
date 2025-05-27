@@ -29,13 +29,13 @@ export default function Signup() {
   };
 
   return (
-    <div id="signup-page">
-      <div className="signup-form">
-        <h1 className="signup-form-heading">Sign Up</h1>
+    <div id="login-page">
+      <div className="login-form">
+        <h1 className="login-form-heading">Sign Up</h1>
 
         <div style={{ height: "1.5rem", textAlign: "center" }}>
-          {error && <div className="signup-error">{error}</div>}
-          {showSuccess && <div className="signup-success">{showSuccess}</div>}
+          {error && <div className="login-error">{error}</div>}
+          {showSuccess && <div className="login-success">{showSuccess}</div>}
         </div>
         <form onSubmit={handleSignup}>
           <div className="input-area">
@@ -62,11 +62,11 @@ export default function Signup() {
               <option value="lecturer">Lecturer</option>
             </select>
           </div>
-          <button className="signup-button" type="submit">
+          <button className="login-button" type="submit">
             Sign Up
           </button>
         </form>
-        <div className="login-link">
+        <div className="signup-link">
           <p>Already have an account?</p>
           <a href="/login">Login</a>
         </div>
