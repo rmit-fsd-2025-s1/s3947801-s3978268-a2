@@ -1,237 +1,144 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Applicant, ChosenApplicant } from "../types/applicant";
-import { useApplicant } from "../context/ApplicantContext";
 import { useAuth } from "@/context/AuthContext";
+import { applicationService, LecturerSelectionService } from "../services/api"; // your axios services
+import { Application, LecturerSelection } from "../types/types";
 
 export default function LecturerPage() {
-  const { getApplicant, selectApplicant } = useApplicant();
-  const router = useRouter();
   const { user } = useAuth();
-  const currentLecturer = user ? user.email : "Anonymous";
-  const searchQuery = ((router.query.search as string) || "").toLowerCase();
+  const router = useRouter();
 
-  const [allApplicants, setAllApplicants] = useState<Applicant[]>([]);
-  const [filteredApplicants, setFilteredApplicants] = useState<Applicant[]>([]);
-  const [chosenApplicants, setChosenApplicants] = useState<ChosenApplicant[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [selections, setSelections] = useState<LecturerSelection[]>([]);
 
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>("");
   const [selectedAvailabilityFilter, setSelectedAvailabilityFilter] = useState<string>("");
 
-  const [courseDropdownOpen, setCourseDropdownOpen] = useState<boolean>(false);
-  const [availabilityDropdownOpen, setAvailabilityDropdownOpen] = useState<boolean>(false);
-
   const [sortedCourses, setSortedCourses] = useState<string[]>([]);
   const availabilityOptions = ["Full Time", "Part Time"];
 
-  // Load & filter applicants
-  const loadApplicants = () => {
-    const applicants = JSON.parse(localStorage.getItem("applicants") || "[]") as Applicant[];
-    const chosen = JSON.parse(localStorage.getItem("chosenApplicants") || "[]") as ChosenApplicant[];
-  
-    const visible = applicants.filter(app => {
-      const record = chosen.find(r => r.applicant.id === app.id);
-      const selectedByLecturer = record?.selections.find(sel => sel.lecturerName === currentLecturer);
-      return !selectedByLecturer; // Only show if this lecturer hasn't selected this applicant
-    });
-  
-    const uniqueCourses = Array.from(new Set(visible.map(a => a.courseName)));
-    uniqueCourses.sort((a, b) => a.localeCompare(b));
-    setSortedCourses(uniqueCourses);
-    setAllApplicants(visible);
-  };
-
+  // Redirect if not lecturer
   useEffect(() => {
-    loadApplicants();
-  }, []);
-
-  useEffect(() => {
-    // If the user is not a lecturer, redirect to home or login
     if (!user || user.accountType !== "lecturer") {
       router.push("/");
     }
   }, [user]);
 
+  // Fetch applications and selections on mount or when user changes
   useEffect(() => {
-    let result = [...allApplicants];
+    if (!user) return;
 
-    if (searchQuery) {
-      result = getApplicant(searchQuery) || [];
-    }
-    if (selectedCourseFilter) {
-      result = result.filter(app => app.courseName === selectedCourseFilter);
-    }
-    if (selectedAvailabilityFilter) {
-      result = result.filter(app => app.availability === selectedAvailabilityFilter);
-    }
+    // Assuming user has an array of course IDs assigned:
+    const assignedCourseIds = user.courses?.map(c => c.id) || [];
 
-    setFilteredApplicants(result);
-  }, [allApplicants, searchQuery, selectedCourseFilter, selectedAvailabilityFilter, getApplicant]);
+    applicationService.getApplications(assignedCourseIds)
+      .then(apps => {
+        setApplications(apps);
+        const uniqueCourses = Array.from(new Set(apps.map(a => a.course.name)));
+        setSortedCourses(uniqueCourses);
+      })
+      .catch(err => console.error("Error fetching applications", err));
 
-  const handleSelection = (applicant: Applicant) => {
-    const recordIndex = chosenApplicants.findIndex(record => record.applicant.id === applicant.id);
+    LecturerSelectionService.getSelectionsByLecturer(user.id)
+      .then(sel => setSelections(sel))
+      .catch(err => console.error("Error fetching selections", err));
+  }, [user]);
 
-    if (recordIndex === -1) {
-        // No record exists for this applicant yet.
-        const newRecord: ChosenApplicant = {
-          applicant,
-          selections: [
-            {
-              lecturerName: currentLecturer,
-              lecturerComment: "",
-              lecturerRank: ""
-            }
-          ]
-        };
-        setChosenApplicants(prev => [...prev, newRecord]);
-      } else {
-        // Applicant record exists.
-        const currentRecord = chosenApplicants[recordIndex];
-        const selectionIndex = currentRecord.selections.findIndex(
-          sel => sel.lecturerName === currentLecturer
-        );
-  
-        if (selectionIndex === -1) {
-          // The current lecturer hasn't selected this applicant yet. Append their selection.
-          const updatedSelections = [
-            ...currentRecord.selections,
-            {
-              lecturerName: currentLecturer,
-              lecturerComment: "",
-              lecturerRank: ""
-            }
-          ];
-          const updatedRecord: ChosenApplicant = { ...currentRecord, selections: updatedSelections };
-          setChosenApplicants(prev => {
-            const newRecords = [...prev];
-            newRecords[recordIndex] = updatedRecord;
-            return newRecords;
-          });
-        } else {
-          // The current lecturer already selected this applicant: toggle removal.
-          const updatedSelections = currentRecord.selections.filter(
-            sel => sel.lecturerName !== currentLecturer
-          );
-          if (updatedSelections.length === 0) {
-            // Remove the entire record if no selections remain.
-            setChosenApplicants(prev => prev.filter(record => record.applicant.id !== applicant.id));
-          } else {
-            const updatedRecord: ChosenApplicant = { ...currentRecord, selections: updatedSelections };
-            setChosenApplicants(prev => {
-              const newRecords = [...prev];
-              newRecords[recordIndex] = updatedRecord;
-              return newRecords;
-            });
-          }
-        }
+  // Filtered applications based on search, course and availability
+  const filteredApplications = applications.filter(app => {
+    let matchesCourse = selectedCourseFilter ? app.course.name === selectedCourseFilter : true;
+    let matchesAvailability = selectedAvailabilityFilter ? app.availability === selectedAvailabilityFilter : true;
+    return matchesCourse && matchesAvailability;
+  });
+
+  // Check if the current lecturer has selected this application
+  const isSelected = (appId: number) =>
+    selections.some(sel => sel.application.id === appId && sel.lecturer.id === user?.id);
+
+  // Toggle selection for an application
+  const toggleSelection = async (app: Application) => {
+    if (!user) return;
+
+    const existingSelection = selections.find(sel => sel.application.id === app.id && sel.lecturer.id === user.id);
+
+    if (existingSelection) {
+      setSelections(prev => prev.filter(sel => sel.id !== existingSelection.id));
+    } else {
+      // Create selection
+      try {
+        const newSelection = await LecturerSelectionService.upsertSelection({
+          applicationId: app.id,
+          lecturerId: user.id,
+          rank: "",
+          comment: ""
+        });
+        setSelections(prev => [...prev, newSelection]);
+      } catch (error) {
+        console.error("Error saving selection", error);
       }
-    };
+    }
+  };
 
+  // Confirm selections 
   const handleConfirmSelection = () => {
-    chosenApplicants.forEach(a => selectApplicant(a));
+    // Redirect
     router.push("/successfulCandidatePage");
   };
 
-  const handleReject = (id: string) => {
-    if (!window.confirm("Are you sure you want to reject this applicant?")) return;
-
-    let storedApps = JSON.parse(localStorage.getItem("applications") || "[]") as Applicant[];
-    storedApps = storedApps.map(app =>
-      app.id === id && (!app.status || app.status === "Pending")
-        ? { ...app, status: "Rejected" }
-        : app
-    );
-    localStorage.setItem("applications", JSON.stringify(storedApps));
-
-    let storedApplicants = JSON.parse(localStorage.getItem("applicants") || "[]") as Applicant[];
-    storedApplicants = storedApplicants.filter(app => app.id !== id);
-    localStorage.setItem("applicants", JSON.stringify(storedApplicants));
-
-    loadApplicants(); // refresh visible
-  };
-
   return (
-    <div className="header">
+    <div>
       <h1>Applicants</h1>
 
-      <div className="header">
-        <span className="sort-label">Sort by:</span>
-
-        {/* Course Filter */}
-        <div className="dropdown-wrapper">
-          <button onClick={() => setCourseDropdownOpen(!courseDropdownOpen)} className="dropdown-toggle">
-            Course: {selectedCourseFilter || "All"}
-          </button>
-          {courseDropdownOpen && (
-            <div className="dropdown-menu">
-              <button onClick={() => { setSelectedCourseFilter(""); setCourseDropdownOpen(false); }} className="dropdown-item">All</button>
-              {sortedCourses.map(course => (
-                <button key={course} onClick={() => { setSelectedCourseFilter(course); setCourseDropdownOpen(false); }} className="dropdown-item">{course}</button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Availability Filter */}
-        <div className="dropdown-wrapper">
-          <button onClick={() => setAvailabilityDropdownOpen(!availabilityDropdownOpen)} className="dropdown-toggle">
-            Availability: {selectedAvailabilityFilter || "All"}
-          </button>
-          {availabilityDropdownOpen && (
-            <div className="dropdown-menu">
-              <button onClick={() => { setSelectedAvailabilityFilter(""); setAvailabilityDropdownOpen(false); }} className="dropdown-item">All</button>
-              {availabilityOptions.map(option => (
-                <button key={option} onClick={() => { setSelectedAvailabilityFilter(option); setAvailabilityDropdownOpen(false); }} className="dropdown-item">{option}</button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {filteredApplicants.length === 0 ? (
-        <p>No Matching Applicants Found</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Select</th>
-              <th>Tutor Name</th>
-              <th>Course Name</th>
-              <th>Availability</th>
-              <th>Skills</th>
-              <th>Academic Credentials</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredApplicants.map(app => (
-              <tr key={app.id}>
-                <td>
-                  <button className="select-button" onClick={() => handleSelection(app)}>
-                    {chosenApplicants.some(a => a.applicant.id === app.id) ? "Undo" : "Select"}
-                  </button>
-                </td>
-                <td>{app.tutorName}</td>
-                <td>{app.courseName}</td>
-                <td>{app.availability}</td>
-                <td>{app.role === "Tutor" ? app.skills : "N/A"}</td>
-                <td>{app.role === "Tutor" ? app.academicCredentials : "N/A"}</td>
-                <td>{app.status || "Pending"}</td>
-                <td>
-                  {(!app.status || app.status === "Pending") && (
-                    <button className="select-button" onClick={() => handleReject(app.id)}>Reject</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
       <div>
-        <button className="confirm-button" onClick={handleConfirmSelection}>Confirm Selection</button>
+        <span>Filter by Course: </span>
+        <select onChange={e => setSelectedCourseFilter(e.target.value)} value={selectedCourseFilter}>
+          <option value="">All</option>
+          {sortedCourses.map(course => (
+            <option key={course} value={course}>{course}</option>
+          ))}
+        </select>
+
+        <span>Filter by Availability: </span>
+        <select onChange={e => setSelectedAvailabilityFilter(e.target.value)} value={selectedAvailabilityFilter}>
+          <option value="">All</option>
+          {availabilityOptions.map(avail => (
+            <option key={avail} value={avail}>{avail}</option>
+          ))}
+        </select>
       </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Tutor Name</th>
+            <th>Course</th>
+            <th>Availability</th>
+            <th>Skills</th>
+            <th>Academic Credentials</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredApplications.map(app => (
+            <tr key={app.id}>
+              <td>
+                <button onClick={() => toggleSelection(app)}>
+                  {isSelected(app.id) ? "Undo" : "Select"}
+                </button>
+              </td>
+              <td>{app.user.email}</td>
+              <td>{app.course.name}</td>
+              <td>{app.availability}</td>
+              <td>{app.skills || "N/A"}</td>
+              <td>{app.academicCredentials || "N/A"}</td>
+              <td>{app.status || "Pending"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <button onClick={handleConfirmSelection}>Confirm Selection</button>
     </div>
   );
 }
