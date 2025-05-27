@@ -28,9 +28,9 @@ export default function Login() {
           router.push(redirectUrl);
         } else {
           if (loggedInUser.accountType === "lecturer") {
-            router.push("/lecturerPage");
+            router.push("/");
           } else if (loggedInUser.accountType === "tutor") {
-            router.push("/tutorPage");
+            router.push("/");
           }
         }
       }, 1000);
