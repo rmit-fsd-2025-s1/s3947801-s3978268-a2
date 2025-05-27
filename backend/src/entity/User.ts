@@ -1,24 +1,24 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
+import { Course } from "./Course";
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: "varchar", length: 254, unique: true })
+  @Column()
   email: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column()
   password: string;
 
-  @Column({ type: "enum", enum: ["lecturer", "tutor"] })
+  @Column()
   accountType: "lecturer" | "tutor";
 
-  @CreateDateColumn({ type: "timestamp" })
-  date_joined: Date; // This is automatically set by the database
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  date_joined: string;
+
+  @ManyToMany(() => Course, course => course.lecturers)
+  @JoinTable() 
+  courses: Course[];
 }
