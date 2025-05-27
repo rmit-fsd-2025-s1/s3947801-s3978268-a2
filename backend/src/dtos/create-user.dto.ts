@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEmail, Length, IsIn } from "class-validator";
+import { IsNotEmpty, IsString, IsEmail, Length, IsIn, IsArray, ArrayNotEmpty, IsOptional, IsNumber } from "class-validator";
 
 export class CreateUserDTO {
   @IsEmail()
@@ -14,4 +14,10 @@ export class CreateUserDTO {
   @IsNotEmpty()
   @IsIn(["lecturer", "tutor"])
   accountType: "lecturer" | "tutor";
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  courses?: number[]; // Array of course IDs
 }
