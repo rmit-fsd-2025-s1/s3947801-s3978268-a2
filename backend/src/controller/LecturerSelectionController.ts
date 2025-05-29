@@ -62,7 +62,7 @@ async upsertSelection(req: Request, res: Response) {
     const applicationRepo = AppDataSource.getRepository(Application);
     const application = await applicationRepo.findOneBy({ id: dto.applicationId });
     if (application) {
-      application.status = "Ranked"; // or whatever status you want
+      application.status = "Ranked";
       await applicationRepo.save(application);
     }
 

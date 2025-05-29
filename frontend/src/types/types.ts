@@ -39,7 +39,3 @@ export interface LecturerSelection {
   rank: string;
   rejected?: boolean;
 }
-
-export interface ChosenApplicant {
-  applicant: Application;  // or whichever type you have for an application/applicant
-}
