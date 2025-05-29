@@ -1,253 +1,155 @@
 import React, { useState, useEffect } from "react";
-import {useApplicant} from "../context/ApplicantContext";
 import { useRouter } from "next/router";
-import { Applicant, ChosenApplicant, LecturerSelection } from "../types/applicant";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
+import { LecturerSelectionService } from "../services/api";
+import { LecturerSelection } from "../types/types";
 
 export default function SuccessfulCandidatePage() {
-    const {chosenApplicant, getChosenApplicant, selectApplicant} = useApplicant();
-    const router = useRouter();
-    const { user } = useAuth();
-    const currentLecturer = user ? user.email : "Anonymous";
-    const [filteredCourse, setFilteredCourse] = useState<string | null>(null);
-    const [courseNames, setCourseNames] = useState<string[]>([]);
-    const [chosenApplicants, setChosenApplicants] = useState<ChosenApplicant[]>([]);
-    const [allChosenApplicants, setAllChosenApplicants] = useState<ChosenApplicant[]>([]);
-    const [completedCourses, setCompletedCourses] = useState<string[]>([]);
+  const { user } = useAuth();
+  const router = useRouter();
 
-    useEffect(() => {
-      // If the user is not a lecturer, redirect to home or login
-      if (!user || user.accountType !== "lecturer") {
-        router.push("/");
-      }
-    }, [user]);
+  // State: selections pending ranking/commenting
+  const [pendingSelections, setPendingSelections] = useState<LecturerSelection[]>([]);
 
-    useEffect(() => {
-        const storedApplicants = (JSON.parse(localStorage.getItem("chosenApplicants") || "[]") as ChosenApplicant[])
-          .map(record => ({ ...record, selections: record.selections || [] }));
-        
-        setAllChosenApplicants(storedApplicants);
-      }, []);
+  // Redirect if not logged in or not lecturer
+  useEffect(() => {
+    if (!user || user.accountType !== "lecturer") {
+      router.push("/");
+    }
+  }, [user, router]);
 
-      useEffect(() => {
-        // Compute the available (not-completed) courses
-        const uniqueCourseNames = [
-          ...new Set(allChosenApplicants.map(record => record.applicant.courseName))
-        ].filter(course => !completedCourses.includes(course));
-        setCourseNames(uniqueCourseNames);
-      }, [allChosenApplicants, completedCourses]);
-      
-      useEffect(() => {
-        // Filter the chosen applicants by the currently selected course, 
-        //  unless it's completed or not chosen at all.
-        if (!filteredCourse || completedCourses.includes(filteredCourse)) {
-          setChosenApplicants([]);
-          return;
-        }
-        const filtered = allChosenApplicants.filter(
-          (record) => record.applicant.courseName === filteredCourse
-        );
-        setChosenApplicants(filtered);
-      }, [filteredCourse, allChosenApplicants, completedCourses]);
+  // Load pending selections from backend on mount
+  useEffect(() => {
+    if (!user) return;
 
-    const handleCourseFilter = (course: string) => {
-        setFilteredCourse(course);
-        router.push(router.pathname);
-      };
+    LecturerSelectionService.getPendingSelections(user.id)
+      .then((data) => setPendingSelections(data))
+      .catch((err) => {
+        console.error("Failed to fetch pending selections", err);
+      });
+  }, [user]);
 
-
-      const handleRankAndComment = (chosenApplicantId: string, rank: string, lecturerComment: string) => {
-        // Find the current record for the applicant.
-        const record = allChosenApplicants.find(
-          rec => rec.applicant.id === chosenApplicantId
-        );
-        if (!record) return;
-    
-        // See if there's already a selection by the current lecturer.
-        const existingSelection = record.selections?.find(
-          sel => sel.lecturerName === currentLecturer
-        );
-        let updatedSelection: LecturerSelection;
-        if (existingSelection) {
-          // Update the existing selection.
-          updatedSelection = {
-            ...existingSelection,
-            lecturerRank: rank,
-            lecturerComment: lecturerComment
-          };
-        } else {
-          // Create a new selection.
-          updatedSelection = {
-            lecturerName: currentLecturer,
-            lecturerRank: rank,
-            lecturerComment: lecturerComment
+  // Handle rank or comment changes
+  const handleRankAndComment = (selectionId: number, rank: string, comment: string) => {
+    setPendingSelections(prev =>
+      prev.map(sel => {
+        if (sel.id === selectionId) {
+          return {
+            ...sel,
+            rank,
+            comment,
           };
         }
-    
-        // Create the new selections array:
-        const newSelections = (record.selections || []).filter(
-          sel => sel.lecturerName !== currentLecturer
-        ).concat(updatedSelection);
-    
-        // Update that record in allChosenApplicants:
-        setAllChosenApplicants(prev => {
-          return prev.map(rec => {
-            if (rec.applicant.id === chosenApplicantId) {
-              return { ...rec, selections: newSelections };
-            }
-            return rec;
-          });
-        });
-      };
-    
-      const filteredChosenApplicants = chosenApplicants.filter(
-        record => record.applicant.courseName === filteredCourse
-      );
-    
-      const handleConfirmSelection = () => {
-        const allRecordsForCourse = allChosenApplicants.filter(
-          (record) => record.applicant.courseName === filteredCourse
-        );
-      
-        // Get all selections made by this lecturer in this course
-        const lecturerSelections = allRecordsForCourse.map(record =>
-          record.selections?.find(sel => sel.lecturerName === currentLecturer)
-        );
-      
-        // Check: Did they rank all applicants?
-        const hasMissing = lecturerSelections.some(sel => !sel || sel.lecturerRank === "");
-        const ranks = lecturerSelections.map(sel => sel?.lecturerRank).filter(Boolean);
-        const uniqueRanks = new Set(ranks);
-      
-        if (hasMissing || ranks.length !== uniqueRanks.size) {
-          alert(
-            `Error: You must assign a unique, non-empty rank to each of the ${allRecordsForCourse.length} applicants before confirming.`
-          );
-          return;
-        }
-      
-        // Passed all checks — safe to save
-        localStorage.setItem("chosenApplicants", JSON.stringify(allChosenApplicants));
-        setCompletedCourses(prev => [...prev, filteredCourse!]);
-      
-        const remainingCourses = courseNames.filter(course => course !== filteredCourse);
-        setCourseNames(remainingCourses);
-      
-        if (remainingCourses.length === 0) {
-          router.push("/");
-        } else {
-          setFilteredCourse(remainingCourses[0]);
-        }
-      };               
+        return sel;
+      })
+    );
+  };
+
+  // Validate unique, non-empty ranks per course before saving
+
+  const handleSaveSelections = async () => {
+  if (!user) return;
+
+  // Group selections by course name
+  const groupedByCourse = pendingSelections.reduce<Record<string, LecturerSelection[]>>((acc, sel) => {
+    const courseName = sel.application.course.name;
+    if (!acc[courseName]) acc[courseName] = [];
+    acc[courseName].push(sel);
+    return acc;
+  }, {});
+
+  // Validate ranks and comments per course
+  for (const [courseName, selections] of Object.entries(groupedByCourse)) {
+    const ranks = selections.map(sel => sel.rank || "");
+    const comments = selections.map(sel => sel.comment?.trim() || "");
+
+    // Check all ranks are assigned
+    if (ranks.some(r => r === "")) {
+      alert(`All applicants in course "${courseName}" must have a rank.`);
+      return;
+    }
+
+    // Check all comments are filled
+    if (comments.some(c => c === "")) {
+      alert(`All applicants in course "${courseName}" must have a comment.`);
+      return;
+    }
+
+    // Check rank uniqueness
+    const uniqueRanks = new Set(ranks);
+    if (uniqueRanks.size !== ranks.length) {
+      alert(`Ranks must be unique for course "${courseName}".`);
+      return;
+    }
+  }
+
+  try {
+    // Save all selections
+    for (const sel of pendingSelections) {
+      await LecturerSelectionService.upsertSelection({
+        applicationId: sel.application.id,
+        lecturerId: user.id,
+        rank: sel.rank,
+        comment: sel.comment,
+      });
+    }
+    alert("Selections saved successfully!");
+    router.push("/");
+  } catch (error) {
+    alert("Error saving selections.");
+    console.error(error);
+  }
+};
 
 
-    return (
-        <div>
-          <div className="header">
-            <h1>Successful Applicants</h1>
-            <h3>Filter By:</h3>
-            <div className="course-keys">
-              {courseNames.map(course => (
-                <button
-                  key={course}
-                  onClick={() => handleCourseFilter(course)}
-                  className="course-button"
-                >
-                  {course}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            {chosenApplicants.length === 0 ? (
-              <p>No Matching Applicants Found</p>
-            ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Tutor Name</th>
-                    <th>Course Name</th>
-                    <th>Availability</th>
-                    <th>Skills</th>
-                    <th>Academic Credentials</th>
-                    <th>Comment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredChosenApplicants.map(record => (
-                    <tr key={record.applicant.id}>
-                      <td>
-                        <select
-                          className="rank-dropdown"
-                          // Here we display the current lecturer’s rank if available.
-                          value={
-                            record.selections?.find(
-                              sel => sel.lecturerName === currentLecturer
-                            )?.lecturerRank || ""
-                          }
-                          onChange={e =>
-                            handleRankAndComment(
-                              record.applicant.id,
-                              e.target.value,
-                              // Preserve any current comment by the lecturer.
-                              record.selections?.find(
-                                sel => sel.lecturerName === currentLecturer
-                              )?.lecturerComment || ""
-                            )
-                          }
-                        >
-                          <option value="">Rank</option>
-                          {(() => {
-                            const options = [];
-                            for (let i = 1; i <= filteredChosenApplicants.length; i++) {
-                              options.push(
-                                <option key={i} value={String(i)}>
-                                  {i}
-                                </option>
-                              );
-                            }
-                            return options;
-                          })()}
-                        </select>
-                      </td>
-                      <td>{record.applicant.tutorName}</td>
-                      <td>{record.applicant.courseName}</td>
-                      <td>{record.applicant.availability}</td>
-                      <td>{record.applicant.role === "Tutor" ? record.applicant.skills : ""}</td>
-                      <td>
-                        {record.applicant.role === "Tutor" ? record.applicant.academicCredentials : ""}
-                      </td>
-                      <td>
-                        <input
-                          // Display the current lecturer’s comment (if any)
-                          value={
-                            record.selections?.find(
-                              sel => sel.lecturerName === currentLecturer
-                            )?.lecturerComment || ""
-                          }
-                          onChange={(e) =>
-                            handleRankAndComment(
-                              record.applicant.id,
-                              record.selections?.find(
-                                sel => sel.lecturerName === currentLecturer
-                              )?.lecturerRank || "",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <div>
-              <button className="confirm-button" onClick={handleConfirmSelection}>
-                Confirm Rank
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+  if (!user) return null;
+
+  return (
+    <div>
+      <h1>Rank and Comment on Selected Applicants</h1>
+      {pendingSelections.length === 0 ? (
+        <p>No pending selections to rank.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Tutor Name</th>
+              <th>Course</th>
+              <th>Rank</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingSelections.map(sel => (
+              <tr key={sel.id}>
+                <td>{sel.application.user.email}</td>
+                <td>{sel.application.course.name}</td>
+                <td>
+                  <select
+                    value={sel.rank || ""}
+                    onChange={(e) => handleRankAndComment(sel.id, e.target.value, sel.comment || "")}
+                  >
+                    <option value="">Select Rank</option>
+                    {[...Array(pendingSelections.length)].map((_, i) => (
+                      <option key={i + 1} value={String(i + 1)}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    value={sel.comment || ""}
+                    onChange={(e) => handleRankAndComment(sel.id, sel.rank || "", e.target.value)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <button onClick={handleSaveSelections}>Save Selections</button>
+    </div>
+  );
 }
