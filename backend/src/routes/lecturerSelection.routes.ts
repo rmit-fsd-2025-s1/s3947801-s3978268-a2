@@ -14,4 +14,8 @@ router.post("/", validateDto(CreateLecturerSelectionDTO), (req: Request, res: Re
   selectionController.upsertSelection(req, res).catch(next);
 });
 
+router.get("/pending", (req: Request, res: Response, next: NextFunction) => {
+  selectionController.getPendingSelectionsByLecturer(req, res).catch(next);
+});
+
 export default router;

@@ -46,10 +46,11 @@ export default function LecturerPage() {
 
   // Filtered applications based on search, course and availability
   const filteredApplications = applications.filter(app => {
-    let matchesCourse = selectedCourseFilter ? app.course.name === selectedCourseFilter : true;
-    let matchesAvailability = selectedAvailabilityFilter ? app.availability === selectedAvailabilityFilter : true;
-    return matchesCourse && matchesAvailability;
-  });
+  if (app.status && app.status !== "Pending") return false; // Exclude ranked
+  let matchesCourse = selectedCourseFilter ? app.course.name === selectedCourseFilter : true;
+  let matchesAvailability = selectedAvailabilityFilter ? app.availability === selectedAvailabilityFilter : true;
+  return matchesCourse && matchesAvailability;
+});
 
   // Check if the current lecturer has selected this application
   const isSelected = (appId: number) =>

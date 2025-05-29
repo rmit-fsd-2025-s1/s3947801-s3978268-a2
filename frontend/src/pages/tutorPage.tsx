@@ -62,7 +62,7 @@ const TutorPage = () => {
       // Create a new application object
       const newApplication = {
         id: Date.now().toString(), // a unique id based on timestamp
-        tutorName: user ? user.username : "Unknown Tutor",
+        tutorName: user ? user.email : "Unknown Tutor",
         role: formData.role,
         // Save the full course string in courseName
         courseName: storedCourseName,

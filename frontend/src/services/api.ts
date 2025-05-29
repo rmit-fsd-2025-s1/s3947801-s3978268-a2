@@ -44,6 +44,13 @@ export const LecturerSelectionService = {
     return res.data;
   },
 
+    getPendingSelections: async (lecturerId: number): Promise<LecturerSelection[]> => {
+    const res = await axios.get<LecturerSelection[]>(`${API_BASE_URL}/lecturerSelections/pending`, {
+      params: { lecturerId },
+    });
+    return res.data;
+  },
+
     upsertSelection: async (selection: {
     applicationId: number;
     lecturerId: number;
