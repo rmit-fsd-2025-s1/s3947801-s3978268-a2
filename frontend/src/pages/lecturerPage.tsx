@@ -11,11 +11,25 @@ export default function LecturerPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [selections, setSelections] = useState<LecturerSelection[]>([]);
 
-  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>("");
-  const [selectedAvailabilityFilter, setSelectedAvailabilityFilter] = useState<string>("");
+  // Extract the search term from the URL query param (from navbar form)
+  const searchTerm = (router.query.search as string) || "";
 
+    // Filters and sort state
+  const [courseFilter, setCourseFilter] = useState<string>("");
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>("");
+  const [candidateFilter, setCandidateFilter] = useState<string>("");
+  const [skillFilter, setSkillFilter] = useState<string>("");
+  const [sessionTypeFilter, setSessionTypeFilter] = useState<string>("");
+  
+
+  // Sorting state
+  const [sortBy, setSortBy] = useState<"course" | "availability" | "">( "");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [sortedCourses, setSortedCourses] = useState<string[]>([]);
+
+  // Available options for filters
   const availabilityOptions = ["Full Time", "Part Time"];
+  const sessionTypes = ["tutor", "lab assistant"];
 
   // Redirect if not lecturer
   useEffect(() => {
@@ -52,12 +66,51 @@ export default function LecturerPage() {
 
 
   // Filtered applications based on search, course and availability
-  const filteredApplications = applications.filter(app => {
-  if (app.status && app.status !== "Pending") return false; // Exclude ranked
-  let matchesCourse = selectedCourseFilter ? app.course.name === selectedCourseFilter : true;
-  let matchesAvailability = selectedAvailabilityFilter ? app.availability === selectedAvailabilityFilter : true;
-  return matchesCourse && matchesAvailability;
-});
+    const filteredApps = applications
+    .filter(app => {
+      // Only show Pending applications (exclude ranked)
+      if (app.status && app.status !== "Pending") return false;
+
+      if (courseFilter && app.course.name !== courseFilter) return false;
+      if (availabilityFilter && app.availability !== availabilityFilter) return false;
+      if (sessionTypeFilter && app.role !== sessionTypeFilter) return false;
+
+      if (candidateFilter && !app.user.email.toLowerCase().includes(candidateFilter.toLowerCase()))
+        return false;
+      if (skillFilter && !app.skills?.toLowerCase().includes(skillFilter.toLowerCase())) return false;
+
+      // Search term across multiple fields
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (
+          !app.user.email.toLowerCase().includes(term) &&
+          !app.skills?.toLowerCase().includes(term) &&
+          !app.course.name.toLowerCase().includes(term)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+
+  // Sort the filtered apps
+  const sortedApps = [...filteredApps].sort((a, b) => {
+    if (sortBy === "course") {
+      return sortDirection === "asc"
+        ? a.course.name.localeCompare(b.course.name)
+        : b.course.name.localeCompare(a.course.name);
+    }
+    if (sortBy === "availability") {
+      const aAvail = a.availability ?? "";
+      const bAvail = b.availability ?? "";
+      return sortDirection === "asc"
+      ? aAvail.localeCompare(bAvail)
+      : bAvail.localeCompare(aAvail);
+    }
+    return 0;
+  });
+
 
   // Check if the current lecturer has selected this application
   const isSelected = (appId: number) =>
@@ -87,6 +140,16 @@ export default function LecturerPage() {
     }
   };
 
+  // Handle sorting toggle on column header click
+  const handleSort = (field: "course" | "availability") => {
+    if (sortBy === field) {
+      setSortDirection(dir => (dir === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDirection("asc");
+    }
+  };
+
   // Confirm selections 
   const handleConfirmSelection = () => {
     // Redirect
@@ -97,38 +160,78 @@ export default function LecturerPage() {
     <div>
       <h1>Applicants</h1>
 
+      {/* Filters */}
       <div>
-        <span>Filter by Course: </span>
-        <select onChange={e => setSelectedCourseFilter(e.target.value)} value={selectedCourseFilter}>
-          <option value="">All</option>
-          {sortedCourses.map(course => (
-            <option key={course} value={course}>{course}</option>
-          ))}
-        </select>
+        <label>
+          Course:
+          <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>
+            <option value="">All</option>
+            {user?.courses?.map(c => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+        </label>
 
-        <span>Filter by Availability: </span>
-        <select onChange={e => setSelectedAvailabilityFilter(e.target.value)} value={selectedAvailabilityFilter}>
-          <option value="">All</option>
-          {availabilityOptions.map(avail => (
-            <option key={avail} value={avail}>{avail}</option>
-          ))}
-        </select>
+        <label>
+          Availability:
+          <select value={availabilityFilter} onChange={e => setAvailabilityFilter(e.target.value)}>
+            <option value="">All</option>
+            {availabilityOptions.map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Session Type:
+          <select value={sessionTypeFilter} onChange={e => setSessionTypeFilter(e.target.value)}>
+            <option value="">All</option>
+            {sessionTypes.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Candidate Name:
+          <input
+            type="text"
+            value={candidateFilter}
+            onChange={e => setCandidateFilter(e.target.value)}
+            placeholder="Search candidate email"
+          />
+        </label>
+
+        <label>
+          Skill Set:
+          <input
+            type="text"
+            value={skillFilter}
+            onChange={e => setSkillFilter(e.target.value)}
+            placeholder="Search skills"
+          />
+        </label>
       </div>
 
+      {/* Table with sortable headers */}
       <table>
         <thead>
           <tr>
             <th>Select</th>
             <th>Tutor Name</th>
-            <th>Course</th>
-            <th>Availability</th>
+            <th onClick={() => handleSort("course")} style={{ cursor: "pointer" }}>
+              Course {sortBy === "course" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+            </th>
+            <th onClick={() => handleSort("availability")} style={{ cursor: "pointer" }}>
+              Availability {sortBy === "availability" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+            </th>
             <th>Skills</th>
             <th>Academic Credentials</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          {filteredApplications.map(app => (
+          {sortedApps.map(app => (
             <tr key={app.id}>
               <td>
                 <button onClick={() => toggleSelection(app)}>

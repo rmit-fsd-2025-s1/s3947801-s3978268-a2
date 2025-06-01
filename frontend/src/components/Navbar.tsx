@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/router";
 
 export default function Navbar() {
   const { user: currentUser, logout } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   const handleSignOut = () => {
@@ -77,8 +78,12 @@ export default function Navbar() {
         </ul>
         <ul className="right-navbar">
           <li>
-            <form action="/lecturerPage" method="get">
-              <input className="search-box" type="text" placeholder="Search.." name="search" />
+            <form onSubmit={(e) => {
+                e.preventDefault(); // Prevent default reload
+                router.push(`/lecturerPage?search=${encodeURIComponent(searchTerm)}`);
+              }}>
+              <input className="search-box" type="text" placeholder="Search.." name="search" value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}/>
             </form>
           </li>
           <li>
