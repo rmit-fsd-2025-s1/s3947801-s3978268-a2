@@ -161,7 +161,7 @@ export default function LecturerPage() {
       <h1>Applicants</h1>
 
       {/* Filters */}
-      <div>
+      <div className="sort-container">
         <label>
           Course:
           <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>

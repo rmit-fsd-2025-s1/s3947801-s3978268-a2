@@ -279,21 +279,23 @@ textarea {
   .header {
     text-align: center;
     background-color: #f8f8f8;
-    padding: 1em 0.25em;
+    padding: 1em 0.5em;
     border-bottom: 2px solid #e0e0e0;
   }
 
-  .header h1 {
+   h1 {
     font-size: 2.5rem;
     color: #333;
     margin: 0;
-
+    padding: 0.25em 0.25em;
+    text-align: center;
   }
 
   .header h3 {
     font-size: 1.25rem;
     color: #666;
     margin: 0.25em 0 0.25em;
+    text-align: center;
   }
 
   table {
@@ -336,11 +338,12 @@ textarea {
     margin: 1em 0;
   }
   
-  .sort-label {
+  .sort-container label {
     font-weight: bold;
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: #666;
     margin: 0.25em 0 0.25em;
+    text-align: center;
   }
   
   .dropdown-wrapper {
@@ -477,5 +480,4 @@ textarea {
     margin-top: 5px;
     font-weight: bold;
   }
-  
   
