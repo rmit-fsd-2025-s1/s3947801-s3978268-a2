@@ -17,3 +17,7 @@ router.post("/login", validateDto(LoginUserDTO), (req, res, next) => {
     userController.login(req, res).catch(next);
   }
 ); 
+
+router.get("/courses", (req, res, next) => {
+  userController.getCoursesByUser(req, res).catch(next);
+});

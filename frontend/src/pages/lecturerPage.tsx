@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
-import { applicationService, LecturerSelectionService } from "../services/api"; // your axios services
+import { applicationService, LecturerSelectionService, userService } from "../services/api"; // your axios services
 import { Application, LecturerSelection } from "../types/types";
 
 export default function LecturerPage() {
@@ -27,22 +27,30 @@ export default function LecturerPage() {
   // Fetch applications and selections on mount or when user changes
   useEffect(() => {
     if (!user) return;
-
-    // Assuming user has an array of course IDs assigned:
-    const assignedCourseIds = user.courses?.map(c => c.id) || [];
-
-    applicationService.getApplications(assignedCourseIds)
+    
+    userService.getCoursesByUser(user.id)
+    .then(courses => {
+      console.log("Loaded courses from backend:", courses);
+      const assignedCourseIds = courses.map(c => c.id);
+      
+      // Fetch applications after you have course IDs
+      applicationService.getApplications(assignedCourseIds)
       .then(apps => {
         setApplications(apps);
         const uniqueCourses = Array.from(new Set(apps.map(a => a.course.name)));
         setSortedCourses(uniqueCourses);
       })
       .catch(err => console.error("Error fetching applications", err));
-
+    })
+    .catch(err => {
+      console.error("Error fetching user courses", err);
+    });
+    
     LecturerSelectionService.getSelectionsByLecturer(user.id)
-      .then(sel => setSelections(sel))
-      .catch(err => console.error("Error fetching selections", err));
+    .then(sel => setSelections(sel))
+    .catch(err => console.error("Error fetching selections", err));
   }, [user]);
+
 
   // Filtered applications based on search, course and availability
   const filteredApplications = applications.filter(app => {

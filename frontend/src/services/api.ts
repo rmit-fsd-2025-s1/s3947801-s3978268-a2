@@ -13,11 +13,17 @@ export const userService = {
     return res.data; // This will be your new user (without password)
   },
 
-    login: async (credentials: { email: string; password: string }): Promise<User> => {
+  login: async (credentials: { email: string; password: string }): Promise<User> => {
     const res = await axios.post<User>(`${API_BASE_URL}/user/login`, credentials);
     return res.data;
   },
-
+  
+  getCoursesByUser: async (userId: number) => {
+    const res = await axios.get<Course[]>(`${API_BASE_URL}/user/courses`, {
+      params: { userId },
+    });
+    return res.data;
+  },
 };
 
 export const applicationService = {
@@ -28,7 +34,6 @@ export const applicationService = {
     });
     return res.data;
   },
-
 };
 
 export const CourseService = {

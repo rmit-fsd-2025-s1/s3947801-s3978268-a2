@@ -43,4 +43,26 @@ export class UserController {
     const { password: _pw, ...userWithoutPassword } = user;
     return res.json(userWithoutPassword);
   }
+
+    async getCoursesByUser(req: Request, res: Response) {
+    const userId = parseInt(req.query.userId as string);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid userId" });
+    }
+
+    try {
+      const user = await AppDataSource.getRepository(User).findOne({
+        where: { id: userId },
+        relations: ["courses"],
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(user.courses);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching user courses", error });
+    }
+  }
 }
