@@ -30,7 +30,6 @@ export default function LecturerPage() {
     
     userService.getCoursesByUser(user.id)
     .then(courses => {
-      console.log("Loaded courses from backend:", courses);
       const assignedCourseIds = courses.map(c => c.id);
       
       // Fetch applications after you have course IDs
