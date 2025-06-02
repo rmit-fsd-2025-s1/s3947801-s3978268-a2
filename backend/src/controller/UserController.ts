@@ -1,37 +1,36 @@
 import { Request, Response } from "express";
-import { getRepository } from "typeorm";
-import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
+import { User } from "../entity/User";
 
 /**
- * Creates a new user record (sign-up)
- * @param req - Express request object containing user data in body
- * @param res - Express response object
- * @returns JSON object of the created user with 201 status
+ * Controller for user-related operations:
+ * - Sign up
+ * - Login
+ * - Get courses by user ID
  */
 export class UserController {
-  /** Repository instance for database operations on Pet entity */
   private userRepo = AppDataSource.getRepository(User);
 
+  /**
+   * Handles user registration (sign-up)
+   */
   async create(req: Request, res: Response) {
-    // Create a new user object from the request body
-    const user: User = this.userRepo.create(req.body as User);
+    const user = this.userRepo.create(req.body as User);
 
-    // Save the new user to the database
     try {
       await this.userRepo.save(user);
     } catch (error) {
-      // For duplicate emails or other DB errors
       return res.status(500).json({ message: "Error saving user", error });
     }
 
-    // NEVER return the password field in the response
     const { password, ...userWithoutPassword } = user;
-    res.status(201).json(userWithoutPassword);
+    return res.status(201).json(userWithoutPassword);
   }
 
-    async login(req: Request, res: Response) {
-          // Login a user object from the request body
+  /**
+   * Handles user login
+   */
+  async login(req: Request, res: Response) {
     const { email, password } = req.body;
 
     const user = await this.userRepo.findOneBy({ email });
@@ -44,14 +43,16 @@ export class UserController {
     return res.json(userWithoutPassword);
   }
 
-    async getCoursesByUser(req: Request, res: Response) {
+
+  async getCoursesByUser(req: Request, res: Response) {
     const userId = parseInt(req.query.userId as string);
+
     if (isNaN(userId)) {
       return res.status(400).json({ message: "Invalid userId" });
     }
 
     try {
-      const user = await AppDataSource.getRepository(User).findOne({
+      const user = await this.userRepo.findOne({
         where: { id: userId },
         relations: ["courses"],
       });
@@ -60,9 +61,10 @@ export class UserController {
         return res.status(404).json({ message: "User not found" });
       }
 
-      res.json(user.courses);
+      return res.json(user.courses ?? []);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching user courses", error });
+      console.error("Error fetching courses for user:", error);
+      return res.status(500).json({ message: "Error fetching user courses", error });
     }
   }
 }

@@ -7,13 +7,16 @@ const PORT = process.env.PORT || 3001;
 import { router as userRoutes } from "./routes/user.routes";
 import applicationRoutes from "./routes/application.routes";
 import lecturerSelectionRoutes from "./routes/lecturerSelection.routes";
+import courseRoutes from "./routes/course.routes";
 
 
 app.use(cors());
 app.use(express.json());
+
 app.use("/api/user", userRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/lecturerSelections", lecturerSelectionRoutes);
+app.use("/api/courses", courseRoutes);
 
 AppDataSource.initialize()
   .then(() => {

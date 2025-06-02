@@ -31,8 +31,7 @@ export default function Navbar() {
         </ul>
       </nav>
     );
-  } else if (currentUser?.accountType === "tutor") {
-    // Tutors see only Home and the Sign out button
+  } else if (currentUser.accountType === "tutor") {
     return (
       <nav className="navbar-flex-container">
         <ul className="left-navbar">
@@ -43,7 +42,7 @@ export default function Navbar() {
             <Link href="/tutorPage">Become a tutor</Link>
           </li>
           <li>
-            <Link href="/applications">Applications</Link>
+            <Link href="/applications">Applications</Link> {/* ← updated route */}
           </li>
         </ul>
         <ul className="right-navbar">
@@ -61,8 +60,7 @@ export default function Navbar() {
         </ul>
       </nav>
     );
-  } else if (currentUser?.accountType === "lecturer") {
-    // Lecturers see Home and Tutors (along with their search form and sign out)
+  } else if (currentUser.accountType === "lecturer") {
     return (
       <nav className="navbar-flex-container">
         <ul className="left-navbar">
@@ -78,12 +76,20 @@ export default function Navbar() {
         </ul>
         <ul className="right-navbar">
           <li>
-            <form onSubmit={(e) => {
-                e.preventDefault(); // Prevent default reload
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
                 router.push(`/lecturerPage?search=${encodeURIComponent(searchTerm)}`);
-              }}>
-              <input className="search-box" type="text" placeholder="Search.." name="search" value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}/>
+              }}
+            >
+              <input
+                className="search-box"
+                type="text"
+                placeholder="Search.."
+                name="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </form>
           </li>
           <li>

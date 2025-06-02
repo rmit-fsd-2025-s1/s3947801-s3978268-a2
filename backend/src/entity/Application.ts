@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   Column,
+  CreateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Course } from "./Course";
@@ -12,8 +13,8 @@ export class Application {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { nullable: false })
-  user: User; // The applicant
+  @ManyToOne(() => User, { nullable: false }) 
+  user: User;
 
   @ManyToOne(() => Course, { nullable: false })
   course: Course;
@@ -38,5 +39,7 @@ export class Application {
 
   @Column({ nullable: true })
   status: string;
-}
 
+  @CreateDateColumn()
+  createdAt: Date;
+}
