@@ -51,7 +51,7 @@ export class ApplicationController {
       });
 
       await this.applicationRepo.save(application);
-      console.log("✔️ New application created:", application);
+      console.log("New application created:", application);
 
       res.status(201).json(application);
     } catch (error) {
