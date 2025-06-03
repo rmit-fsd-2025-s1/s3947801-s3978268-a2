@@ -68,3 +68,11 @@ export const LecturerSelectionService = {
 
 };
 
+export const VisualService = {
+  getVisualStats: async () => {
+    const res = await axios.get(`${API_BASE_URL}/visualStats`);
+    return res.data;
+  }
+};
+
+

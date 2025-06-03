@@ -8,6 +8,7 @@ import { router as userRoutes } from "./routes/user.routes";
 import applicationRoutes from "./routes/application.routes";
 import lecturerSelectionRoutes from "./routes/lecturerSelection.routes";
 import courseRoutes from "./routes/course.routes";
+import visualRoutes from "./routes/visual.routes";
 
 
 app.use(cors());
@@ -17,6 +18,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/lecturerSelections", lecturerSelectionRoutes);
 app.use("/api/courses", courseRoutes);
+app.use('/api', visualRoutes);
 
 AppDataSource.initialize()
   .then(() => {

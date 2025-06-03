@@ -469,7 +469,7 @@ th {
 
 .bar-item {
   width: 50%;
-  background-color: #36b9bf;
+  background-color: hsl(37, 98%, 53%);
   border-top-right-radius: 4px;
   border-top-left-radius: 4px;
   transition: background-color 0.3s;
