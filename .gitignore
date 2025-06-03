@@ -4,20 +4,20 @@
 *.log
 
 # === Frontend ===
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
-frontend/build/
-frontend/coverage/
+teach-team/frontend/node_modules/
+teach-team/frontend/.next/
+teach-team/frontend/out/
+teach-team/frontend/.env
+teach-team/frontend/.env.local
+teach-team/frontend/.env.*.local
+teach-team/frontend/build/
+teach-team/frontend/coverage/
 
 # === Backend ===
-backend/node_modules/
-backend/dist/
-backend/.env
-backend/scripts/
+teach-team/backend/node_modules/
+teach-team/backend/dist/
+teach-team/backend/.env
+teach-team/backend/scripts/
 
 # === TypeScript ===
 *.tsbuildinfo
