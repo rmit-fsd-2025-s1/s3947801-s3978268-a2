@@ -19,6 +19,22 @@ teach-team/backend/dist/
 teach-team/backend/.env
 teach-team/backend/scripts/
 
+# === Admin Frontend ===
+admin/frontend/node_modules/
+admin/frontend/.next/
+admin/frontend/out/
+admin/frontend/.env
+admin/frontend/.env.local
+admin/frontend/.env.*.local
+admin/frontend/build/
+admin/frontend/coverage/
+
+# === Admin Backend ===
+admin/backend/node_modules/
+admin/backend/dist/
+admin/backend/.env
+admin/backend/scripts/
+
 # === TypeScript ===
 *.tsbuildinfo
 
