@@ -29,7 +29,7 @@ export default function LecturerPage() {
 
   // Available options for filters
   const availabilityOptions = ["Full Time", "Part Time"];
-  const sessionTypes = ["tutor", "lab assistant"];
+  const sessionTypes = ["candidate", "lab assistant"];
 
   // Redirect if not lecturer
   useEffect(() => {
@@ -218,7 +218,7 @@ export default function LecturerPage() {
         <thead>
           <tr>
             <th>Select</th>
-            <th>Tutor Name</th>
+            <th>Candidate Name</th>
             <th onClick={() => handleSort("course")} style={{ cursor: "pointer" }}>
               Course {sortBy === "course" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
             </th>

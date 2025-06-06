@@ -29,7 +29,7 @@ export default function Login() {
         } else {
           if (loggedInUser.accountType === "lecturer") {
             router.push("/");
-          } else if (loggedInUser.accountType === "tutor") {
+          } else if (loggedInUser.accountType === "candidate") {
             router.push("/");
           }
         }

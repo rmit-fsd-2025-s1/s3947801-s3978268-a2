@@ -13,7 +13,7 @@ export default function TutorPage() {
   useEffect(() => {
     if (!user) {
       router.push("/login?redirect=/tutorPage");
-    } else if (user.accountType !== "tutor" && user.accountType !== "lecturer") {
+    } else if (user.accountType !== "candidate" && user.accountType !== "lecturer") {
       router.push("/");
     } else {
       axios

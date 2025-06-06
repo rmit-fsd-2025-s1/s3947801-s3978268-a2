@@ -27,7 +27,7 @@ export default function ApplicationsPage() {
       }
     };
 
-    if (user && user.accountType === "tutor") {
+    if (user && user.accountType === "candidate") {
       fetchApplications();
     } else {
       router.push("/");
@@ -63,7 +63,7 @@ export default function ApplicationsPage() {
 
           <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
             <option value="">All Roles</option>
-            <option value="tutor">Tutor</option>
+            <option value="candidate">Candidate</option>
             <option value="lab assistant">Lab Assistant</option>
           </select>
         </div>

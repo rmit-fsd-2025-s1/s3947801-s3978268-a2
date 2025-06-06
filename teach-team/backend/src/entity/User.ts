@@ -14,7 +14,7 @@ export class User {
   password: string;
 
   @Column()
-  accountType: "lecturer" | "tutor";
+  accountType: "lecturer" | "candidate" | "admin";
 
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   date_joined: string;

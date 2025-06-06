@@ -8,7 +8,7 @@ interface ApplicationFormProps {
 
 export default function ApplicationForm({ userId, courses }: ApplicationFormProps) {
   const [courseId, setCourseId] = useState<string>("");
-  const [role, setRole] = useState("tutor");
+  const [role, setRole] = useState("candidate");
   const [previousRole, setPreviousRole] = useState("");
   const [availability, setAvailability] = useState("");
   const [skills, setSkills] = useState("");
@@ -91,7 +91,7 @@ export default function ApplicationForm({ userId, courses }: ApplicationFormProp
 
         <label htmlFor="role">Role</label>
         <select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="tutor">Tutor</option>
+          <option value="candidate">Candidate</option>
           <option value="lab assistant">Lab Assistant</option>
         </select>
 

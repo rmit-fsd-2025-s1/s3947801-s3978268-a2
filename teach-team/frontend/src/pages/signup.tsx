@@ -6,7 +6,7 @@ import { userService } from "../services/api"; // update if your path is differe
 export default function Signup() {
   const [email, setEmail] = useState("");           // use email, not username
   const [password, setPassword] = useState("");
-  const [accountType, setAccountType] = useState("tutor"); // default
+  const [accountType, setAccountType] = useState("candidate"); // default
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState("");
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function Signup() {
     setError("");
     setShowSuccess("");
     try {
-      await userService.createUser({ email, password, accountType: accountType as "lecturer" | "tutor" });
+      await userService.createUser({ email, password, accountType: accountType as "lecturer" | "candidate" });
       setShowSuccess("Signup successful! Redirecting to login...");
       setTimeout(() => {
         setShowSuccess("");
@@ -58,7 +58,7 @@ export default function Signup() {
               onChange={(e) => setAccountType(e.target.value)}
               required
             >
-              <option value="tutor">Tutor</option>
+              <option value="candidate">Candidate</option>
               <option value="lecturer">Lecturer</option>
             </select>
           </div>

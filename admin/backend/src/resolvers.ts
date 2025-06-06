@@ -30,7 +30,7 @@ export const resolvers = {
         `SELECT u.* FROM user u
         JOIN application a ON u.id = a.userId
         JOIN lecturer_selection ls ON a.id = ls.applicationId
-        WHERE a.courseId = ? AND u.accountType = 'tutor'`,
+        WHERE a.courseId = ? AND u.accountType = 'candidate'`,
         [courseId]
       );
       return rows;
@@ -42,7 +42,7 @@ export const resolvers = {
         FROM user u
         JOIN application a ON u.id = a.userId
         JOIN lecturer_selection ls ON ls.applicationId = a.id
-        WHERE u.accountType = 'tutor'
+        WHERE u.accountType = 'candidate'
         GROUP BY u.id
         HAVING courseCount > ?`,
         [minCourses]
@@ -56,7 +56,7 @@ export const resolvers = {
         SELECT DISTINCT u.*
         FROM user u
         JOIN application a ON u.id = a.userId
-        WHERE u.accountType = 'tutor'
+        WHERE u.accountType = 'candidate'
         AND u.id NOT IN (
         SELECT u2.id
         FROM user u2

@@ -12,8 +12,8 @@ export class CreateUserDTO {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(["lecturer", "tutor"])
-  accountType: "lecturer" | "tutor";
+  @IsIn(["lecturer", "candidate"])
+  accountType: "lecturer" | "candidate";
 
   @IsOptional()
   @IsArray()

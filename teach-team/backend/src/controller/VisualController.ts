@@ -54,10 +54,10 @@ export class VisualController {
         .createQueryBuilder('selection')
         .select('selection.applicationId');
       
-      const notChosenTutors = await this.userRepo
+      const notChosenCandidate = await this.userRepo
       .createQueryBuilder("user")
       .innerJoin("user.applications", "app")
-      .where(`user.accountType = :type`, { type: "tutor" })
+      .where(`user.accountType = :type`, { type: "candidate" })
       .andWhere(qb => {
         const subQuery = qb
         .subQuery()
@@ -85,7 +85,7 @@ export class VisualController {
               count: parseInt(leastChosenRaw.count),
             }
           : null,
-          notChosen: notChosenTutors.map(user => ({
+          notChosen: notChosenCandidate.map(user => ({
             userId: user.id,
             email: user.email,
         })),

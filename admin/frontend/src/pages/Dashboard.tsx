@@ -59,7 +59,6 @@ export default function Dashboard() {
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
-          <option value="tutor">Tutor</option>
           <option value="lecturer">Lecturer</option>
           <option value="candidate">Candidate</option>
         </select>

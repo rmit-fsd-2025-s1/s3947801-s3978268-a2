@@ -31,7 +31,7 @@ export default function Navbar() {
         </ul>
       </nav>
     );
-  } else if (currentUser.accountType === "tutor") {
+  } else if (currentUser.accountType === "candidate") {
     return (
       <nav className="navbar-flex-container">
         <ul className="left-navbar">
@@ -39,7 +39,7 @@ export default function Navbar() {
             <Link href="/">Home</Link>
           </li>
           <li> 
-            <Link href="/tutorPage">Become a tutor</Link>
+            <Link href="/tutorPage">Become a candidate</Link>
           </li>
           <li>
             <Link href="/applications">Applications</Link> {/* ← updated route */}
@@ -68,7 +68,7 @@ export default function Navbar() {
             <Link href="/">Home</Link>
           </li>
           <li>
-            <Link href="/lecturerPage">Tutors</Link>
+            <Link href="/lecturerPage">Candidates</Link>
           </li>
           <li>
             <Link href="/virtualizationPage">Applicant Data</Link>

@@ -2,7 +2,7 @@ export interface User {
   id: number;                // number in DB, not string
   email: string;
   password: string;          // will NOT be sent from API after login!
-  accountType: "lecturer" | "tutor";
+  accountType: "lecturer" | "candidate";
   date_joined: string;       // ISO date string from backend (e.g., "2023-05-26T14:45:00Z")
 
   courses?: Course[];        // Add this line for assigned courses
