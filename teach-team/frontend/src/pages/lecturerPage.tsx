@@ -158,7 +158,7 @@ export default function LecturerPage() {
 
   return (
     <div>
-      <h1>Applicants</h1>
+        <h1>Applicants</h1>
 
       {/* Filters */}
       <div className="sort-container">
@@ -213,6 +213,12 @@ export default function LecturerPage() {
         </label>
       </div>
 
+      <div className="confirm-button-container">
+        <button className="confirm-btn" onClick={handleConfirmSelection}>
+          Confirm Selections
+        </button>
+      </div>
+
       {/* Table with sortable headers */}
       <table>
         <thead>
@@ -248,8 +254,6 @@ export default function LecturerPage() {
           ))}
         </tbody>
       </table>
-
-      <button onClick={handleConfirmSelection}>Confirm Selection</button>
     </div>
   );
 }

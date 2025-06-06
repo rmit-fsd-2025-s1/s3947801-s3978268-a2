@@ -329,10 +329,34 @@ th {
   background-color: #fff8e6;
 }
 
+.confirm-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-btn:hover {
+  background-color: #388e3c;
+}
+
+.confirm-button-container {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 /* SORTING IN LECTURER PAGE */
 .sort-container {
   display: flex;
-  align-items: center;
+  align-self: center;
   gap: 1em;
   margin: 1em 0;
 }
