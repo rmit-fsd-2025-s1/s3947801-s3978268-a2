@@ -22,26 +22,13 @@ export default function CourseManagement() {
     }
   );
 
-  const [assignLecturer] = useMutation(ASSIGN_LECTURER);
-
-  const handleAssign = async (courseId: string, lecturerId: number) => {
-    try {
-      await assignLecturer({ variables: { userId: lecturerId, courseId } });
-      alert("Lecturer assigned successfully.");
-      if (selectedCourse === courseId) {
-        refetchLecturersByCourse();
-      }
-    } catch (err: any) {
-      alert("Failed to assign lecturer: " + err.message);
-    }
-  };
 
   const toggleViewLecturers = async (courseId: string) => {
     if (selectedCourse === courseId) {
       setSelectedCourse(null);
     } else {
       setSelectedCourse(courseId);
-      await refetchLecturersByCourse();
+      await refetchLecturersByCourse({courseId});
     }
   };
 
@@ -59,7 +46,6 @@ export default function CourseManagement() {
           <tr className={styles.tableHeader}>
             <th>Course ID</th>
             <th>Course Name</th>
-            <th>Assign Lecturer</th>
             <th>View Lecturers</th>
           </tr>
         </thead>
@@ -69,21 +55,6 @@ export default function CourseManagement() {
               <tr>
                 <td>{course.id}</td>
                 <td>{course.name}</td>
-                <td>
-                  <select
-                    onChange={(e) => handleAssign(course.id, Number(e.target.value))}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>
-                      Select Lecturer
-                    </option>
-                    {userData?.users?.map((user: any) => (
-                      <option key={user.id} value={user.id}>
-                        {user.email}
-                      </option>
-                    ))}
-                  </select>
-                </td>
                 <td>
                   <button
                     onClick={() => toggleViewLecturers(course.id)}
