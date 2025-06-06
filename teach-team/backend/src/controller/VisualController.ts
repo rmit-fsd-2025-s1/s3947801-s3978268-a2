@@ -14,40 +14,37 @@ export class VisualController {
     try {
       // Find most chosen applicant by counting selection rows grouped by applicationId
       const mostChosenRaw = await this.selectionRepo
-        .createQueryBuilder('selection')
-        .select('selection.applicationId')
-        .addSelect('COUNT(selection.applicationId)', 'count')
-        .groupBy('selection.applicationId')
-        .orderBy('count', 'DESC')
-        .limit(1)
-        .getRawOne();
+      .createQueryBuilder('selection')
+      .select('app.userId', 'userId')
+      .addSelect('COUNT(selection.id)', 'count')
+      .innerJoin(Application, 'app', 'app.id = selection.applicationId')
+      .groupBy('app.userId')
+      .orderBy('count', 'DESC')
+      .limit(1)
+      .getRawOne();
 
       if (!mostChosenRaw) return res.status(404).json({ message: 'No applicants found' });
 
       // Fetch application and related user info (email)
-      const mostChosenApp = await this.applicationRepo.findOne({
-        where: { id: mostChosenRaw.selection_applicationId },
-        relations: ['user'],
+      const mostChosenApp = await this.userRepo.findOne({
+        where: { id: mostChosenRaw.userId },
       });
 
       // Find least chosen applicant with count > 0
       const leastChosenRaw = await this.selectionRepo
-        .createQueryBuilder('selection')
-        .select('selection.applicationId')
-        .addSelect('COUNT(selection.applicationId)', 'count')
-        .groupBy('selection.applicationId')
-        .having('count > 0')
-        .orderBy('count', 'ASC')
-        .limit(1)
-        .getRawOne();
+      .createQueryBuilder('selection')
+      .select('app.userId', 'userId')
+      .addSelect('COUNT(selection.id)', 'count')
+      .innerJoin(Application, 'app', 'app.id = selection.applicationId')
+      .groupBy('app.userId')
+      .orderBy('count', 'ASC')
+      .limit(1)
+      .getRawOne();
 
       // Fetch application and user info for least chosen
       const leastChosenApp = leastChosenRaw
-        ? await this.applicationRepo.findOne({
-            where: { id: leastChosenRaw.selection_applicationId },
-            relations: ['user'],
-          })
-        : null;
+      ? await this.userRepo.findOne({ where: { id: leastChosenRaw.userId } })
+      : null;
 
       // Get applicants who have no selections
       const subQuery = this.selectionRepo
@@ -71,23 +68,23 @@ export class VisualController {
 
       // Respond with data formatted for frontend
       return res.json({
-        mostChosen: mostChosenApp?.user
+        mostChosen: mostChosenApp
         ? {
-          applicationId: mostChosenApp.id,
-          email: mostChosenApp.user.email,
+          userId: mostChosenApp.id,
+          email: mostChosenApp.email,
           count: parseInt(mostChosenRaw.count),
         }
         : null,
-        leastChosen: leastChosenApp?.user
-          ? {
-              applicationId: leastChosenApp.id,
-              email: leastChosenApp.user.email,
-              count: parseInt(leastChosenRaw.count),
-            }
-          : null,
-          notChosen: notChosenCandidate.map(user => ({
-            userId: user.id,
-            email: user.email,
+        leastChosen: leastChosenApp
+        ? {
+          userId: leastChosenApp.id,
+          email: leastChosenApp.email,
+          count: parseInt(leastChosenRaw.count),
+        }
+        : null,
+        notChosen: notChosenCandidate.map(user => ({
+          userId: user.id,
+          email: user.email,
         })),
       });
     } catch (error) {
