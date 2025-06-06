@@ -62,3 +62,30 @@ export const GET_LECTURERS_BY_COURSE = gql`
   }
 `;
 
+export const CANDIDATES_BY_COURSE = gql`
+  query CandidatesByCourse($courseId: ID!) {
+    candidatesByCourse(courseId: $courseId) {
+      id
+      email
+    }
+  }
+`;
+
+export const CANDIDATES_WITH_MANY_COURSES = gql`
+  query {
+    candidatesWithManyCourses(minCourses: 3) {
+      id
+      email
+    }
+  }
+`;
+
+export const CANDIDATES_NOT_CHOSEN = gql`
+  query {
+    candidatesNotChosen {
+      id
+      email
+    }
+  }
+`;
+

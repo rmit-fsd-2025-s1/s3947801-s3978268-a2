@@ -27,11 +27,10 @@ export const resolvers = {
 
     candidatesByCourse: async (_, { courseId }) => {
       const [rows] = await db.query(
-        `
-        SELECT u.* FROM user u
-        JOIN user_courses_course uc ON u.id = uc.userId
-        WHERE uc.courseId = ? AND u.accountType = 'candidate'
-      `,
+        `SELECT u.* FROM user u
+        JOIN application a ON u.id = a.userId
+        JOIN lecturer_selection ls ON a.id = ls.applicationId
+        WHERE a.courseId = ? AND u.accountType = 'tutor'`,
         [courseId]
       );
       return rows;
@@ -39,13 +38,13 @@ export const resolvers = {
 
     candidatesWithManyCourses: async (_, { minCourses }) => {
       const [rows] = await db.query(
-        `
-        SELECT u.*, COUNT(uc.courseId) as courseCount FROM user u
-        JOIN user_courses_course uc ON u.id = uc.userId
-        WHERE u.accountType = 'candidate'
+        `SELECT u.*, COUNT(DISTINCT a.courseId) as courseCount
+        FROM user u
+        JOIN application a ON u.id = a.userId
+        JOIN lecturer_selection ls ON ls.applicationId = a.id
+        WHERE u.accountType = 'tutor'
         GROUP BY u.id
-        HAVING courseCount > ?
-      `,
+        HAVING courseCount > ?`,
         [minCourses]
       );
       return rows;
@@ -53,13 +52,13 @@ export const resolvers = {
 
     candidatesNotChosen: async () => {
       const [rows] = await db.query(
-        `
-        SELECT * FROM user u
-        WHERE u.accountType = 'candidate'
-          AND NOT EXISTS (
-            SELECT 1 FROM user_courses_course uc WHERE uc.userId = u.id
-          )
-      `
+        `SELECT DISTINCT u.*
+        FROM user u
+        JOIN application a ON u.id = a.userId
+        WHERE u.accountType = 'tutor'
+        AND NOT EXISTS (
+        SELECT 1 FROM lecturer_selection ls WHERE ls.applicationId = a.id
+        )`
       );
       return rows;
     },

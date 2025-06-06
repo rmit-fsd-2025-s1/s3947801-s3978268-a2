@@ -19,6 +19,7 @@ export default function Navbar() {
         <li><Link to="/dashboard">Dashboard</Link></li>
         <li><Link to="/course-management">Course Management</Link></li>
         <li><Link to="/assign-lecturer">Assign Lecturers</Link></li>
+        <li><Link to="/candidate-report">Candidate Report</Link></li>
       </ul>
       <button onClick={handleLogout} className={styles.logoutBtn}>
         Logout
