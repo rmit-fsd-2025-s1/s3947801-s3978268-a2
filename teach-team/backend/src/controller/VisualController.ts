@@ -56,18 +56,18 @@ export class VisualController {
       
       const notChosenCandidate = await this.userRepo
       .createQueryBuilder("user")
-      .innerJoin("user.applications", "app")
-      .where(`user.accountType = :type`, { type: "candidate" })
+      .where("user.accountType = :type", { type: "candidate" })
       .andWhere(qb => {
-        const subQuery = qb
+        const sub = qb
         .subQuery()
-        .select("ls.applicationId")
-        .from("lecturer_selection", "ls")
+        .select("app.userId")
+        .from(Application, "app")
+        .innerJoin("lecturer_selection", "ls", "ls.applicationId = app.id")
         .getQuery();
-        return `app.id NOT IN ${subQuery}`;
+        return `user.id NOT IN ${sub}`;
       })
-      .groupBy("user.id")
       .getMany();
+
 
       // Respond with data formatted for frontend
       return res.json({
