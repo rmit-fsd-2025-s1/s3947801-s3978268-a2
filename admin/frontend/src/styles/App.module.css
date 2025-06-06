@@ -1,0 +1,11 @@
+.admin-app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 1.5rem;
+  background-color: #f8fafc;
+}

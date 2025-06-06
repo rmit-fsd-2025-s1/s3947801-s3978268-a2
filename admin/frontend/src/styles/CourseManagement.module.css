@@ -1,0 +1,58 @@
+.container {
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableHeader th {
+  background-color: #e5e7eb;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  text-align: center; 
+}
+
+.table td {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  text-align: center; 
+}
+
+.viewLecturersButton {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.viewLecturersButton:hover {
+  background-color: #2563eb;
+}
+
+.assignedLecturersContainer {
+  padding: 0.5rem;
+  background-color: #f3f4f6;
+  border: 1px solid #ccc;
+}
+
+.assignedLecturersList {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+}
