@@ -2,10 +2,12 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { LecturerSelection } from "../entity/LecturerSelection";
 import { Application } from "../entity/Application";
+import { User } from "../entity/User";
 
 export class VisualController {
   private selectionRepo = AppDataSource.getRepository(LecturerSelection);
   private applicationRepo = AppDataSource.getRepository(Application);
+  private userRepo = AppDataSource.getRepository(User);
 
   // This method combines all three queries into one response for the frontend
   async getVisualStats(req: Request, res: Response) {
@@ -51,30 +53,41 @@ export class VisualController {
       const subQuery = this.selectionRepo
         .createQueryBuilder('selection')
         .select('selection.applicationId');
-
-      const notChosenApps = await this.applicationRepo
-        .createQueryBuilder('app')
-        .leftJoinAndSelect('app.user', 'user')
-        .where(`app.id NOT IN (${subQuery.getQuery()})`)
-        .getMany();
+      
+      const notChosenTutors = await this.userRepo
+      .createQueryBuilder("user")
+      .innerJoin("user.applications", "app")
+      .where(`user.accountType = :type`, { type: "tutor" })
+      .andWhere(qb => {
+        const subQuery = qb
+        .subQuery()
+        .select("ls.applicationId")
+        .from("lecturer_selection", "ls")
+        .getQuery();
+        return `app.id NOT IN ${subQuery}`;
+      })
+      .groupBy("user.id")
+      .getMany();
 
       // Respond with data formatted for frontend
       return res.json({
-        mostChosen: {
-          applicationId: mostChosenApp?.id,
-          email: mostChosenApp?.user.email,
+        mostChosen: mostChosenApp?.user
+        ? {
+          applicationId: mostChosenApp.id,
+          email: mostChosenApp.user.email,
           count: parseInt(mostChosenRaw.count),
-        },
-        leastChosen: leastChosenApp
+        }
+        : null,
+        leastChosen: leastChosenApp?.user
           ? {
               applicationId: leastChosenApp.id,
               email: leastChosenApp.user.email,
               count: parseInt(leastChosenRaw.count),
             }
           : null,
-        notChosen: notChosenApps.map(app => ({
-          applicationId: app.id,
-          email: app.user.email,
+          notChosen: notChosenTutors.map(user => ({
+            userId: user.id,
+            email: user.email,
         })),
       });
     } catch (error) {
