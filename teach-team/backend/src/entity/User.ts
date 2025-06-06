@@ -18,6 +18,9 @@ export class User {
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   date_joined: string;
 
+  @Column({ default: false })
+  blocked: boolean;
+
   @ManyToMany(() => Course, course => course.lecturers)
   @JoinTable() 
   courses: Course[];
