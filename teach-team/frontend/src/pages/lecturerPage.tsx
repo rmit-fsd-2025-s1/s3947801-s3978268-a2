@@ -29,7 +29,7 @@ export default function LecturerPage() {
 
   // Available options for filters
   const availabilityOptions = ["Full Time", "Part Time"];
-  const sessionTypes = ["candidate", "lab assistant"];
+  const sessionTypes = ["tutor", "lab assistant"];
 
   // Redirect if not lecturer
   useEffect(() => {
