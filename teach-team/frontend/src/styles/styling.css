@@ -423,6 +423,66 @@ th {
   font-size: 1em;
 }
 
+.course-label {
+  font-weight: bold;
+  padding: 10px;
+  margin-bottom: 0; 
+}
+
+.course-select {
+  padding: 5px;
+  margin: 0 5px;
+  margin-bottom: 0;
+  padding: 10px;
+  border: 2px solid #ff9900;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #fff7e6;
+  color: #333;
+  font-weight: 500;
+  width: 300px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.course-select:focus {
+  outline: none;
+  border-color: #ff9900;
+  box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.4);
+  margin-bottom: 0;
+}
+
+
+.save-selection-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.save-selection-button:hover {
+  background-color: #388e3c;
+}
+
+.save-selection-button-container {
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.course-hd {
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+}
+
+
 /* TUTOR'S APPLICATION PAGE */
 .success-message {
   background-color: #e0f7fa;

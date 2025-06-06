@@ -117,26 +117,27 @@ export default function LecturerPage() {
     selections.some(sel => sel.application.id === appId && sel.lecturer.id === user?.id);
 
   // Toggle selection for an application
-  const toggleSelection = async (app: Application) => {
+  const toggleSelection = (app: Application) => {
     if (!user) return;
-
-    const existingSelection = selections.find(sel => sel.application.id === app.id && sel.lecturer.id === user.id);
-
-    if (existingSelection) {
-      setSelections(prev => prev.filter(sel => sel.id !== existingSelection.id));
+    
+    const alreadySelected = selections.find(
+      sel => sel.application.id === app.id && sel.lecturer.id === user.id
+    );
+    
+    if (alreadySelected) {
+      setSelections(prev => prev.filter(sel => sel.application.id !== app.id));
     } else {
-      // Create selection
-      try {
-        const newSelection = await LecturerSelectionService.upsertSelection({
-          applicationId: app.id,
-          lecturerId: user.id,
+      // Just add a placeholder selection object (not from DB)
+      setSelections(prev => [
+        ...prev,
+        {
+          id: 0, 
+          application: app,
+          lecturer: user,
           rank: "",
           comment: ""
-        });
-        setSelections(prev => [...prev, newSelection]);
-      } catch (error) {
-        console.error("Error saving selection", error);
-      }
+        }
+      ]);
     }
   };
 
@@ -151,10 +152,28 @@ export default function LecturerPage() {
   };
 
   // Confirm selections 
-  const handleConfirmSelection = () => {
-    // Redirect
-    router.push("/successfulCandidatePage");
+  const handleConfirmSelection = async () => {
+    if (!user) return;
+    
+    try {
+      for (const sel of selections) {
+        // Only persist selections not already saved
+        if (sel.id === 0) {
+          await LecturerSelectionService.upsertSelection({
+            applicationId: sel.application.id,
+            lecturerId: user.id,
+            rank: sel.rank || "",
+            comment: sel.comment || ""
+          });
+        }
+      }
+      router.push("/successfulCandidatePage");
+    } catch (err) {
+      console.error("Error confirming selections", err);
+      alert("Something went wrong confirming your selections.");
+    }
   };
+
 
   return (
     <div>
