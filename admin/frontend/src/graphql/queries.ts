@@ -32,8 +32,8 @@ export const ADD_COURSE = gql`
 `;
 
 export const EDIT_COURSE = gql`
-  mutation EditCourse($id: ID!, $name: String!) {
-    editCourse(id: $id, name: $name) {
+  mutation EditCourse($oldId: ID!, $newId: ID!, $name: String!) {
+    editCourse(oldId: $oldId, newId: $newId, name: $name) {
       id
       name
     }

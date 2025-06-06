@@ -90,13 +90,19 @@ export const resolvers = {
       await db.query('INSERT INTO course (id, name) VALUES (?, ?)', [id, name]);
       return { id, name };
     },
-
-    editCourse: async (_, { id, name }) => {
-      await db.query('UPDATE course SET name = ? WHERE id = ?', [name, id]);
-      return { id, name };
+    
+    editCourse: async (_, { oldId, newId, name }) => {
+      await db.query('UPDATE course SET id = ?, name = ? WHERE id = ?', [newId, name, oldId]);
+      return { id: newId, name };
     },
 
     deleteCourse: async (_, { id }) => {
+      await db.query(` DELETE ls FROM lecturer_selection ls
+          JOIN application a ON ls.applicationId = a.id
+          WHERE a.courseId = ?`, [id]);
+
+      await db.query('DELETE FROM application WHERE courseId = ?', [id]);
+      await db.query('DELETE FROM user_courses_course WHERE courseId = ?', [id]);
       await db.query('DELETE FROM course WHERE id = ?', [id]);
       return true;
     },
