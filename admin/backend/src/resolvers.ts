@@ -52,13 +52,18 @@ export const resolvers = {
 
     candidatesNotChosen: async () => {
       const [rows] = await db.query(
-        `SELECT DISTINCT u.*
+        `
+        SELECT DISTINCT u.*
         FROM user u
         JOIN application a ON u.id = a.userId
         WHERE u.accountType = 'tutor'
-        AND NOT EXISTS (
-        SELECT 1 FROM lecturer_selection ls WHERE ls.applicationId = a.id
-        )`
+        AND u.id NOT IN (
+        SELECT u2.id
+        FROM user u2
+        JOIN application a2 ON u2.id = a2.userId
+        JOIN lecturer_selection ls ON ls.applicationId = a2.id
+        )
+        `
       );
       return rows;
     },
