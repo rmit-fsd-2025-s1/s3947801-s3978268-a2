@@ -5,9 +5,14 @@ import styles from "../styles/Dashboard.module.css";
 
 const BLOCK_CANDIDATE = gql`
   mutation BlockCandidate($userId: ID!, $block: Boolean!) {
-    blockCandidate(userId: $userId, block: $block)
+    blockCandidate(userId: $userId, block: $block) {
+      id
+      email
+      blocked
+    }
   }
 `;
+
 
 export default function Dashboard() {
   const [filterRole, setFilterRole] = useState("");
@@ -15,30 +20,39 @@ export default function Dashboard() {
 
   const parsedBlocked = filterBlocked === "" ? undefined : filterBlocked === "true";
 
+  const filterVars = {
+    accountType: filterRole || undefined,
+    blocked: parsedBlocked,
+  };
+
   const { data, loading, error, refetch } = useQuery(GET_USERS, {
-    variables: {
-      accountType: filterRole || undefined,
-      blocked: parsedBlocked,
-    },
+    variables: filterVars,
     fetchPolicy: "network-only",
   });
 
   const [blockCandidate] = useMutation(BLOCK_CANDIDATE);
 
-  useEffect(() => {
-    refetch({
+const handleBlockToggle = async (id: number, currentlyBlocked: boolean) => {
+  try {
+    const res = await blockCandidate({
+      variables: {
+        userId: id.toString(),
+        block: !currentlyBlocked,
+      },
+    });
+    console.log("Mutation response:", res);
+    await refetch({
       accountType: filterRole || undefined,
       blocked: parsedBlocked,
     });
-  }, [filterRole, filterBlocked, parsedBlocked, refetch]);
+  } catch (error: any) {
+    console.error("Block mutation failed:", error);
+    if (error.networkError?.result?.errors) {
+      console.error("GraphQL Errors:", error.networkError.result.errors);
+    }
+  }
+};
 
-  const handleBlockToggle = async (id: number, currentlyBlocked: boolean) => {
-    await blockCandidate({ variables: { userId: id, block: !currentlyBlocked } });
-    refetch({
-      accountType: filterRole || undefined,
-      blocked: parsedBlocked,
-    });
-  };
 
   const dateFormatter = new Intl.DateTimeFormat("en-AU", {
     dateStyle: "medium",

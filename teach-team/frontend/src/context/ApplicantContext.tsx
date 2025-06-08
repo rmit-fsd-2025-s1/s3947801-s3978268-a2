@@ -1,73 +1,68 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Applicant, ChosenApplicant, ApplicantSearchField } from "../types/applicant";
-import { validateHeaderValue } from "node:http";
+import React, { createContext, useContext, useState } from "react";
+import { Applicant, ChosenApplicant } from "../types/applicant";
+import { applicantService } from "../services/applicantService";
 
 interface ApplicantContextType {
-    applicant: Applicant | null;
-    chosenApplicant: ChosenApplicant | null;
-    submitApplicant: (applicant: Applicant | null) => void;
-    getApplicant: (value: string) => Applicant [] | null;
-    getChosenApplicant: () => ChosenApplicant [] | null;
-    selectApplicant: (chosenApplicant: ChosenApplicant) => void;
-};
+  applicant: Applicant | null;
+  chosenApplicant: ChosenApplicant | null;
+  submitApplicant: (applicant: Applicant) => Promise<void>;
+  getApplicant: (search: string) => Promise<Applicant[]>;
+  getChosenApplicant: () => Promise<ChosenApplicant[]>;
+  selectApplicant: (chosenApplicant: ChosenApplicant) => Promise<void>;
+}
 
 const ApplicantContext = createContext<ApplicantContextType | undefined>(undefined);
 
-export function ApplicantProvider({ children }: {children: React.ReactNode}) {
-        const [applicant, setApplicant] = useState<Applicant | null>(null);
-        const [chosenApplicant, setChosenApplicant] = useState<ChosenApplicant | null>(null);
+export function ApplicantProvider({ children }: { children: React.ReactNode }) {
+  const [applicant, setApplicant] = useState<Applicant | null>(null);
+  const [chosenApplicant, setChosenApplicant] = useState<ChosenApplicant | null>(null);
 
-        useEffect(() => {
-            // Retrieve any stored applicants
-            let applicants = JSON.parse(localStorage.getItem("applicants") || "[]") as Applicant[];
-          }, []);
-          
+  const submitApplicant = async (applicant: Applicant) => {
+    setApplicant(applicant);
+    await applicantService.submitApplicant(applicant);
+  };
 
-        const submitApplicant = (applicant: Applicant | null) => {
-            
-        }
+  const getApplicant = async (search: string): Promise<Applicant[]> => {
+    const applicants = await applicantService.getApplicants();
+    const value = search.toLowerCase();
+    return applicants.filter(
+      (a) =>
+        a.tutorName.toLowerCase().includes(value) ||
+        a.courseName.toLowerCase().includes(value) ||
+        a.availability.toLowerCase().includes(value) ||
+        a.skills.toLowerCase().includes(value)
+    );
+  };
 
-        const getApplicant = (value: string): Applicant [] | null => {
-            const applicants = JSON.parse(localStorage.getItem("applicants") || "[]") as Applicant [];
-            const searchValue = value.toLowerCase();
+  const getChosenApplicant = async (): Promise<ChosenApplicant[]> => {
+    return await applicantService.getChosenApplicants();
+  };
 
-            const foundApplicants = applicants.filter(
-                (a) => a.tutorName.toLowerCase().includes(searchValue) ||
-                a.courseName.toLowerCase().includes(searchValue) ||
-                a.availability.toLowerCase().includes(searchValue) ||
-                a.skills.toLowerCase().includes(searchValue)
-            );
-            return foundApplicants || [];
-        }
+  const selectApplicant = async (chosenApplicant: ChosenApplicant) => {
+    setChosenApplicant(chosenApplicant);
+    await applicantService.selectApplicant(chosenApplicant);
+  };
 
-        const getChosenApplicant = (): ChosenApplicant [] | null => {
-            const chosenApplicants = JSON.parse(localStorage.getItem("chosenApplicants") || "[]") as ChosenApplicant [];
-            return chosenApplicants || [];
-        }
-
-         const selectApplicant =  (chosenApplicant: ChosenApplicant) => {
-            const applicant = chosenApplicant.applicant;
-            if (!applicant) return;
-
-            const chosenApplicants = JSON.parse(localStorage.getItem("chosenApplicants") || "[]") as ChosenApplicant [];
-            if (chosenApplicants.some(a => a.applicant.id === applicant.id)) return;
-            
-            chosenApplicants.push(chosenApplicant);
-            localStorage.setItem("chosenApplicants", JSON.stringify(chosenApplicants));
-            
-        }
-
-        return(
-            <ApplicantContext.Provider value={{applicant, chosenApplicant, submitApplicant, getApplicant, getChosenApplicant, selectApplicant}}>
-                {children}
-            </ApplicantContext.Provider>
-        );
+  return (
+    <ApplicantContext.Provider
+      value={{
+        applicant,
+        chosenApplicant,
+        submitApplicant,
+        getApplicant,
+        getChosenApplicant,
+        selectApplicant,
+      }}
+    >
+      {children}
+    </ApplicantContext.Provider>
+  );
 }
 
-export function useApplicant(){
-    const context = useContext(ApplicantContext);
-    if (!context) {
-        throw new Error("useApplicant function must be used within ApplicantProvider");
-    }
-    return context;
+export function useApplicant() {
+  const context = useContext(ApplicantContext);
+  if (!context) {
+    throw new Error("useApplicant must be used within ApplicantProvider");
+  }
+  return context;
 }

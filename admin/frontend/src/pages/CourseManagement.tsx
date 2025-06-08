@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_COURSES,
-  GET_USERS,
   GET_LECTURERS_BY_COURSE,
   ADD_COURSE,
   EDIT_COURSE,
@@ -13,7 +12,6 @@ import { Link } from "react-router-dom";
 
 export default function CourseManagement() {
   const { data: courseData, refetch: refetchCourses } = useQuery(GET_COURSES);
-  const { data: userData } = useQuery(GET_USERS, { variables: { accountType: "lecturer" } });
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
   const { data: lecturersByCourseData, refetch: refetchLecturersByCourse } = useQuery(

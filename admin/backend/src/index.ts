@@ -1,33 +1,59 @@
 import "reflect-metadata";
-import express, { Application } from "express";
+import express from "express";
 import cors from "cors";
+import http from "http";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 import { ApolloServer } from "apollo-server-express";
+import { ApolloServerPluginDrainHttpServer } from "apollo-server-core";
+import { WebSocketServer } from "ws";
+
+// @ts-ignore 
+import { useServer } from "graphql-ws/lib/use/ws";
+
 import { typeDefs } from "./schema";
 import { resolvers } from "./resolvers";
-import { ApolloServerPluginDrainHttpServer } from "apollo-server-core";
-import http from "http";
 
-const startServer = async () => {
-  const app: Application = express();
+async function start() {
+  const app = express();
   app.use(cors());
+
+  const schema = makeExecutableSchema({ typeDefs, resolvers });
 
   const httpServer = http.createServer(app);
 
-  const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: "/graphql",
   });
 
-  await server.start();
-  server.applyMiddleware({ app });
+  const serverCleanup = useServer({ schema }, wsServer);
+
+  const apollo = new ApolloServer({
+    schema,
+    plugins: [
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              await serverCleanup.dispose();
+            },
+          };
+        },
+      },
+    ],
+  });
+
+  await apollo.start();
+  apollo.applyMiddleware({ app, path: "/graphql" });
 
   const PORT = 4000;
   httpServer.listen(PORT, () => {
-    console.log(`Server ready at http://localhost:${PORT}${server.graphqlPath}`);
+    console.log(`HTTP: http://localhost:${PORT}/graphql`);
+    console.log(`WS:   ws://localhost:${PORT}/graphql`);
   });
-};
+}
 
-startServer().catch((err) => {
-  console.error("Failed to start server:", err);
+start().catch((err) => {
+  console.error("Server failed to start", err);
 });

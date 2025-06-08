@@ -3,6 +3,9 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { applicationService, LecturerSelectionService, userService } from "../services/api"; // your axios services
 import { Application, LecturerSelection } from "../types/types";
+import { useSubscription } from "@apollo/client";
+import { CANDIDATE_UNAVAILABLE_SUBSCRIPTION } from "../graphql/subscriptions";
+import { toast } from "react-toastify";
 
 export default function LecturerPage() {
   const { user } = useAuth();
@@ -14,16 +17,16 @@ export default function LecturerPage() {
   // Extract the search term from the URL query param (from navbar form)
   const searchTerm = (router.query.search as string) || "";
 
-    // Filters and sort state
+  // Filters and sort state
   const [courseFilter, setCourseFilter] = useState<string>("");
   const [availabilityFilter, setAvailabilityFilter] = useState<string>("");
   const [candidateFilter, setCandidateFilter] = useState<string>("");
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [sessionTypeFilter, setSessionTypeFilter] = useState<string>("");
-  
+
 
   // Sorting state
-  const [sortBy, setSortBy] = useState<"course" | "availability" | "">( "");
+  const [sortBy, setSortBy] = useState<"course" | "availability" | "">("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [sortedCourses, setSortedCourses] = useState<string[]>([]);
 
@@ -41,32 +44,53 @@ export default function LecturerPage() {
   // Fetch applications and selections on mount or when user changes
   useEffect(() => {
     if (!user) return;
-    
+
     userService.getCoursesByUser(user.id)
-    .then(courses => {
-      const assignedCourseIds = courses.map(c => c.id);
-      
-      // Fetch applications after you have course IDs
-      applicationService.getApplications(assignedCourseIds)
-      .then(apps => {
-        setApplications(apps);
-        const uniqueCourses = Array.from(new Set(apps.map(a => a.course.name)));
-        setSortedCourses(uniqueCourses);
+      .then(courses => {
+        const assignedCourseIds = courses.map(c => c.id);
+
+        // Fetch applications after you have course IDs
+        applicationService.getApplications(assignedCourseIds)
+          .then(apps => {
+            setApplications(apps);
+            const uniqueCourses = Array.from(new Set(apps.map(a => a.course.name)));
+            setSortedCourses(uniqueCourses);
+          })
+          .catch(err => console.error("Error fetching applications", err));
       })
-      .catch(err => console.error("Error fetching applications", err));
-    })
-    .catch(err => {
-      console.error("Error fetching user courses", err);
-    });
-    
+      .catch(err => {
+        console.error("Error fetching user courses", err);
+      });
+
     LecturerSelectionService.getSelectionsByLecturer(user.id)
-    .then(sel => setSelections(sel))
-    .catch(err => console.error("Error fetching selections", err));
+      .then(sel => setSelections(sel))
+      .catch(err => console.error("Error fetching selections", err));
   }, [user]);
+
+  // Subscribe to candidate unavailability (blocked)
+  useSubscription(CANDIDATE_UNAVAILABLE_SUBSCRIPTION, {
+    onData: ({ data }) => {
+      const blockedUser = data.data?.candidateUnavailable;
+      if (!blockedUser?.id || !blockedUser.blocked) return;
+
+      toast.info(`Candidate ${blockedUser.email} was removed because they are no longer available`);
+
+      // Remove applications of the blocked user
+      setApplications(prev =>
+        prev.filter(app => app.user.id !== blockedUser.id)
+      );
+
+      // Also remove any selection related to the blocked user
+      setSelections(prev =>
+        prev.filter(sel => sel.application.user.id !== blockedUser.id)
+      );
+    },
+  });
+
 
 
   // Filtered applications based on search, course and availability
-    const filteredApps = applications
+  const filteredApps = applications
     .filter(app => {
       // Only show Pending applications (exclude ranked)
       if (app.status && app.status !== "Pending") return false;
@@ -105,8 +129,8 @@ export default function LecturerPage() {
       const aAvail = a.availability ?? "";
       const bAvail = b.availability ?? "";
       return sortDirection === "asc"
-      ? aAvail.localeCompare(bAvail)
-      : bAvail.localeCompare(aAvail);
+        ? aAvail.localeCompare(bAvail)
+        : bAvail.localeCompare(aAvail);
     }
     return 0;
   });
@@ -119,11 +143,11 @@ export default function LecturerPage() {
   // Toggle selection for an application
   const toggleSelection = (app: Application) => {
     if (!user) return;
-    
+
     const alreadySelected = selections.find(
       sel => sel.application.id === app.id && sel.lecturer.id === user.id
     );
-    
+
     if (alreadySelected) {
       setSelections(prev => prev.filter(sel => sel.application.id !== app.id));
     } else {
@@ -131,7 +155,7 @@ export default function LecturerPage() {
       setSelections(prev => [
         ...prev,
         {
-          id: 0, 
+          id: 0,
           application: app,
           lecturer: user,
           rank: "",
@@ -154,7 +178,7 @@ export default function LecturerPage() {
   // Confirm selections 
   const handleConfirmSelection = async () => {
     if (!user) return;
-    
+
     try {
       for (const sel of selections) {
         // Only persist selections not already saved
@@ -177,7 +201,7 @@ export default function LecturerPage() {
 
   return (
     <div>
-        <h1>Applicants</h1>
+      <h1>Applicants</h1>
 
       {/* Filters */}
       <div className="sort-container">

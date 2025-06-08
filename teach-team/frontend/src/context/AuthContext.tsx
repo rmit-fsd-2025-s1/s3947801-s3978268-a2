@@ -13,18 +13,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
   const login = async (email: string, password: string): Promise<User | null> => {
     try {
       const user = await userService.login({ email, password });
       setUser(user);
-      localStorage.setItem("currentUser", JSON.stringify(user));
       return user;
     } catch (error) {
       return null;
@@ -33,7 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("currentUser");
   };
 
   return (

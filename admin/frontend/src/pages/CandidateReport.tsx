@@ -5,7 +5,7 @@ import {
     GET_COURSES,
 } from "../graphql/queries";
 import React from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import styles from "../styles/CandidateReport.module.css";
 import { Link } from "react-router-dom";
 

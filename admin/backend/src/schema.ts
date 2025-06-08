@@ -28,12 +28,16 @@ export const typeDefs = gql`
     lecturersByCourse(courseId: ID!): [User!]!
   }
 
-  type Mutation {
-    assignLecturerToCourse(userId: ID!, courseId: ID!): Boolean!
-    addCourse(id: ID!, name: String!): Course!
-    editCourse(id: ID!, name: String!): Course!
-    deleteCourse(id: ID!): Boolean!
-    blockCandidate(userId: ID!, block: Boolean!): Boolean!
-    loginAdmin(email: String!, password: String!): AuthPayload!
+type Mutation {
+  assignLecturerToCourse(userId: ID!, courseId: ID!): Boolean!
+  addCourse(id: ID!, name: String!): Course!
+  editCourse(id: ID!, name: String!): Course!
+  deleteCourse(id: ID!): Boolean!
+  blockCandidate(userId: ID!, block: Boolean!): User!
+  loginAdmin(email: String!, password: String!): AuthPayload!
+}
+
+  type Subscription {
+    candidateUnavailable: User
   }
 `;
