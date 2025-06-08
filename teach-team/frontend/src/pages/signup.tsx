@@ -1,20 +1,21 @@
-import Head from "next/head";
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { userService } from "../services/api"; // update if your path is different
+import { userService } from "../services/api";
+import Link from "next/link";
 
 export default function Signup() {
-  const [email, setEmail] = useState("");           // use email, not username
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [accountType, setAccountType] = useState("candidate"); // default
+  const [accountType, setAccountType] = useState("candidate");
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState("");
   const router = useRouter();
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setShowSuccess("");
+
     try {
       await userService.createUser({ email, password, accountType: accountType as "lecturer" | "candidate" });
       setShowSuccess("Signup successful! Redirecting to login...");
@@ -22,8 +23,13 @@ export default function Signup() {
         setShowSuccess("");
         router.push("/login");
       }, 1200);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Signup failed.");
+    } catch (err: unknown) {
+      if (err instanceof Error && "response" in err && typeof err.response === "object") {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        setError(axiosError.response?.data?.message || "Signup failed.");
+      } else {
+        setError("Signup failed.");
+      }
       setTimeout(() => setError(""), 2500);
     }
   };
@@ -37,6 +43,7 @@ export default function Signup() {
           {error && <div className="login-error">{error}</div>}
           {showSuccess && <div className="login-success">{showSuccess}</div>}
         </div>
+
         <form onSubmit={handleSignup}>
           <div className="input-area">
             <input
@@ -66,9 +73,10 @@ export default function Signup() {
             Sign Up
           </button>
         </form>
+
         <div className="signup-link">
           <p>Already have an account?</p>
-          <a href="/login">Login</a>
+          <Link href="/login">Login</Link>
         </div>
       </div>
     </div>

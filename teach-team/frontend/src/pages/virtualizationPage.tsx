@@ -19,30 +19,33 @@ export default function VisualRepresentation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  async function fetchStats() {
-    try {
-      const res = await axios.get<StatsResponse>('http://localhost:3001/api/visualStats');
-      if (res.status === 200) {
-        setStats(res.data);
-      } else {
-        console.warn("No stats found.");
-        setStats(null);
+    async function fetchStats() {
+      try {
+        const res = await axios.get<StatsResponse>('http://localhost:3001/api/visualStats');
+        if (res.status === 200) {
+          setStats(res.data);
+        } else {
+          console.warn("No stats found.");
+          setStats(null);
+        }
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 404) {
+            console.warn("No stats found (404).");
+            setStats(null);
+          } else {
+            console.error("Axios error:", error.message);
+          }
+        } else {
+          console.error("Unexpected error:", error);
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        console.warn("No stats found (404).");
-        setStats(null);
-      } else {
-        console.error("Error fetching stats", error);
-      }
-    } finally {
-      setLoading(false);
     }
-  }
 
-  fetchStats();
-}, []);
-
+    fetchStats();
+  }, []);
 
   if (loading) return <div>Loading data...</div>;
   if (!stats) return <div>No data available</div>;

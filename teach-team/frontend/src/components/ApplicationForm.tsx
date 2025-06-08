@@ -55,7 +55,7 @@ export default function ApplicationForm({ userId, courses }: ApplicationFormProp
 
       setSuccessMsg("Application submitted successfully!");
       setErrorMsg("");
-    } catch (err) {
+    } catch {
       setErrorMsg("Error submitting application. Possibly duplicate or server error.");
       setSuccessMsg("");
     }

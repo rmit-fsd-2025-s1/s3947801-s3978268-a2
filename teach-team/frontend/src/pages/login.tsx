@@ -1,12 +1,12 @@
-import Head from "next/head";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState("");
   const router = useRouter();
@@ -46,6 +46,7 @@ export default function Login() {
           {error && <div className="login-error">{error}</div>}
           {showSuccess && <div className="login-success">{showSuccess}</div>}
         </div>
+
         <form onSubmit={handleLogin}>
           <div className="input-area">
             <input
@@ -67,9 +68,10 @@ export default function Login() {
             Log In
           </button>
         </form>
+
         <div className="signup-link">
-          <p>Don't have an account?</p>
-          <a href="/signup">Sign up</a>
+          <p>Don&apos;t have an account?</p>
+          <Link href="/signup">Sign up</Link>
         </div>
       </div>
     </div>

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import router from "next/router";
-
+import { Application } from "../types/types";
 export default function ApplicationsPage() {
   const { user } = useAuth();
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
 
@@ -22,8 +22,8 @@ export default function ApplicationsPage() {
           `http://localhost:3001/api/applications/user/${user.id}?${params.toString()}`
         );
         setApplications(response.data);
-      } catch (error) {
-        console.error("Error fetching applications:", error);
+      } catch {
+        console.error("Error fetching applications");
       }
     };
 
@@ -39,9 +39,9 @@ export default function ApplicationsPage() {
 
     try {
       await axios.delete(`http://localhost:3001/api/applications/${id}`);
-      setApplications((prev) => prev.filter((app) => app.id !== id));
-    } catch (error) {
-      console.error("Error deleting application:", error);
+      setApplications((prev) => prev.filter((app) => app.id.toString() !== id));
+    } catch {
+      console.error("Error deleting application");
     }
   };
 
@@ -95,15 +95,15 @@ export default function ApplicationsPage() {
               {applications.map((app) => (
                 <tr key={app.id}>
                   <td className="role">{app.role}</td>
-                  <td className="course-name">{app.course?.name || app.courseName}</td>
+                  <td className="course-name">{app.course?.name || app.course.name}</td>
                   <td className="previous-role"><div className="scrollable-cell">{app.previousRole}</div></td>
                   <td className="availability"><div className="scrollable-cell">{app.availability}</div></td>
                   <td className="skills"><div className="scrollable-cell">{app.skills}</div></td>
                   <td className="academic-credentials"><div className="scrollable-cell">{app.academicCredentials}</div></td>
                   <td className="status">{app.status || "Pending"}</td>
-                  <td className="created-at">{new Date(app.createdAt).toLocaleDateString()}</td>
+                  <td className="created-at">{new Date(app.date_applied).toLocaleDateString()}</td>
                   <td className="action">
-                    <button onClick={() => handleDelete(app.id)} className="delete-button">
+                    <button onClick={() => handleDelete(app.id.toString())} className="delete-button">
                       Delete
                     </button>
                   </td>
