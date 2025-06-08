@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = await userService.login({ email, password });
       setUser(user);
       return user;
-    } catch (error) {
+    } catch {
       return null;
     }
   };

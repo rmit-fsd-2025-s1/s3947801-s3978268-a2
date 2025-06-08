@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
-import { applicationService, LecturerSelectionService, userService } from "../services/api"; // your axios services
-import { Application, LecturerSelection } from "../types/types";
-import { useSubscription } from "@apollo/client";
-import { CANDIDATE_UNAVAILABLE_SUBSCRIPTION } from "../graphql/subscriptions";
-import { toast } from "react-toastify";
+import { applicationService, LecturerSelectionService, userService } from "../services/api";
+import { Application, LecturerSelection, Course } from "../types/types";
 
 export default function LecturerPage() {
   const { user } = useAuth();
@@ -14,111 +11,82 @@ export default function LecturerPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [selections, setSelections] = useState<LecturerSelection[]>([]);
 
-  // Extract the search term from the URL query param (from navbar form)
-  const searchTerm = (router.query.search as string) || "";
-
-  // Filters and sort state
   const [courseFilter, setCourseFilter] = useState<string>("");
+  const [lecturerCourses, setLecturerCourses] = useState<Course[]>([]);
   const [availabilityFilter, setAvailabilityFilter] = useState<string>("");
   const [candidateFilter, setCandidateFilter] = useState<string>("");
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [sessionTypeFilter, setSessionTypeFilter] = useState<string>("");
 
-
-  // Sorting state
   const [sortBy, setSortBy] = useState<"course" | "availability" | "">("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [sortedCourses, setSortedCourses] = useState<string[]>([]);
 
-  // Available options for filters
   const availabilityOptions = ["Full Time", "Part Time"];
   const sessionTypes = ["tutor", "lab assistant"];
 
-  // Redirect if not lecturer
+  const searchTerm = (router.query.search as string) || "";
+
   useEffect(() => {
     if (!user || user.accountType !== "lecturer") {
       router.push("/");
     }
-  }, [user]);
+  }, [user, router]);
 
-  // Fetch applications and selections on mount or when user changes
   useEffect(() => {
     if (!user) return;
 
     userService.getCoursesByUser(user.id)
       .then(courses => {
         const assignedCourseIds = courses.map(c => c.id);
+        setLecturerCourses(courses);
 
-        // Fetch applications after you have course IDs
         applicationService.getApplications(assignedCourseIds)
           .then(apps => {
             setApplications(apps);
-            const uniqueCourses = Array.from(new Set(apps.map(a => a.course.name)));
-            setSortedCourses(uniqueCourses);
           })
-          .catch(err => console.error("Error fetching applications", err));
+          .catch(() => console.error("Error fetching applications"));
       })
-      .catch(err => {
-        console.error("Error fetching user courses", err);
+      .catch(() => {
+        console.error("Error fetching user courses");
       });
 
     LecturerSelectionService.getSelectionsByLecturer(user.id)
       .then(sel => setSelections(sel))
-      .catch(err => console.error("Error fetching selections", err));
+      .catch(() => console.error("Error fetching selections"));
   }, [user]);
 
-  // Subscribe to candidate unavailability (blocked)
-  useSubscription(CANDIDATE_UNAVAILABLE_SUBSCRIPTION, {
-    onData: ({ data }) => {
-      const blockedUser = data.data?.candidateUnavailable;
-      if (!blockedUser?.id || !blockedUser.blocked) return;
+  const filteredApps = applications.filter(app => {
+    if (app.status && app.status !== "Pending") return false;
+    if (courseFilter && app.course.id.toString() !== courseFilter) return false;
+    if (availabilityFilter && app.availability !== availabilityFilter) return false;
+    if (sessionTypeFilter && app.role !== sessionTypeFilter) return false;
 
-      toast.info(`Candidate ${blockedUser.email} was removed because they are no longer available`);
+    if (
+      candidateFilter &&
+      !app.user.email.toLowerCase().includes(candidateFilter.toLowerCase())
+    )
+      return false;
 
-      // Remove applications of the blocked user
-      setApplications(prev =>
-        prev.filter(app => app.user.id !== blockedUser.id)
-      );
+    if (
+      skillFilter &&
+      !app.skills?.toLowerCase().includes(skillFilter.toLowerCase())
+    )
+      return false;
 
-      // Also remove any selection related to the blocked user
-      setSelections(prev =>
-        prev.filter(sel => sel.application.user.id !== blockedUser.id)
-      );
-    },
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      if (
+        !app.user.email.toLowerCase().includes(term) &&
+        !app.skills?.toLowerCase().includes(term) &&
+        !app.course.name.toLowerCase().includes(term)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   });
 
-
-
-  // Filtered applications based on search, course and availability
-  const filteredApps = applications
-    .filter(app => {
-      // Only show Pending applications (exclude ranked)
-      if (app.status && app.status !== "Pending") return false;
-
-      if (courseFilter && app.course.name !== courseFilter) return false;
-      if (availabilityFilter && app.availability !== availabilityFilter) return false;
-      if (sessionTypeFilter && app.role !== sessionTypeFilter) return false;
-
-      if (candidateFilter && !app.user.email.toLowerCase().includes(candidateFilter.toLowerCase()))
-        return false;
-      if (skillFilter && !app.skills?.toLowerCase().includes(skillFilter.toLowerCase())) return false;
-
-      // Search term across multiple fields
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        if (
-          !app.user.email.toLowerCase().includes(term) &&
-          !app.skills?.toLowerCase().includes(term) &&
-          !app.course.name.toLowerCase().includes(term)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    });
-
-
-  // Sort the filtered apps
   const sortedApps = [...filteredApps].sort((a, b) => {
     if (sortBy === "course") {
       return sortDirection === "asc"
@@ -135,12 +103,11 @@ export default function LecturerPage() {
     return 0;
   });
 
-
-  // Check if the current lecturer has selected this application
   const isSelected = (appId: number) =>
-    selections.some(sel => sel.application.id === appId && sel.lecturer.id === user?.id);
+    selections.some(
+      sel => sel.application.id === appId && sel.lecturer.id === user?.id
+    );
 
-  // Toggle selection for an application
   const toggleSelection = (app: Application) => {
     if (!user) return;
 
@@ -151,7 +118,6 @@ export default function LecturerPage() {
     if (alreadySelected) {
       setSelections(prev => prev.filter(sel => sel.application.id !== app.id));
     } else {
-      // Just add a placeholder selection object (not from DB)
       setSelections(prev => [
         ...prev,
         {
@@ -165,7 +131,6 @@ export default function LecturerPage() {
     }
   };
 
-  // Handle sorting toggle on column header click
   const handleSort = (field: "course" | "availability") => {
     if (sortBy === field) {
       setSortDirection(dir => (dir === "asc" ? "desc" : "asc"));
@@ -175,13 +140,11 @@ export default function LecturerPage() {
     }
   };
 
-  // Confirm selections 
   const handleConfirmSelection = async () => {
     if (!user) return;
 
     try {
       for (const sel of selections) {
-        // Only persist selections not already saved
         if (sel.id === 0) {
           await LecturerSelectionService.upsertSelection({
             applicationId: sel.application.id,
@@ -192,12 +155,10 @@ export default function LecturerPage() {
         }
       }
       router.push("/successfulCandidatePage");
-    } catch (err) {
-      console.error("Error confirming selections", err);
+    } catch {
       alert("Something went wrong confirming your selections.");
     }
   };
-
 
   return (
     <div>
@@ -209,8 +170,10 @@ export default function LecturerPage() {
           Course:
           <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>
             <option value="">All</option>
-            {user?.courses?.map(c => (
-              <option key={c.id} value={c.name}>{c.name}</option>
+            {lecturerCourses.map(c => (
+              <option key={c.id} value={c.id.toString()}>
+                {c.name}
+              </option>
             ))}
           </select>
         </label>
@@ -220,7 +183,9 @@ export default function LecturerPage() {
           <select value={availabilityFilter} onChange={e => setAvailabilityFilter(e.target.value)}>
             <option value="">All</option>
             {availabilityOptions.map(a => (
-              <option key={a} value={a}>{a}</option>
+              <option key={a} value={a}>
+                {a}
+              </option>
             ))}
           </select>
         </label>
@@ -230,7 +195,9 @@ export default function LecturerPage() {
           <select value={sessionTypeFilter} onChange={e => setSessionTypeFilter(e.target.value)}>
             <option value="">All</option>
             {sessionTypes.map(s => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </label>

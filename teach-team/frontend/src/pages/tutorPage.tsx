@@ -13,33 +13,37 @@ export default function TutorPage() {
   useEffect(() => {
     if (!user) {
       router.push("/login?redirect=/tutorPage");
-    } else if (user.accountType !== "candidate" && user.accountType !== "lecturer") {
-      router.push("/");
-    } else {
-      axios
-        .get("http://localhost:3001/api/courses")
-        .then((res) => {
-          setCourses(res.data);
-        })
-        .catch((err) => {
-          console.error("Error fetching courses:", err);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      return;
     }
-  }, [user]);
 
-  if (!user || loading) return null;
+    if (user.accountType !== "candidate" && user.accountType !== "lecturer") {
+      router.push("/");
+      return;
+    }
+
+    axios
+      .get("http://localhost:3001/api/courses")
+      .then((res) => setCourses(res.data))
+      .catch((err) => console.error("Error fetching courses:", err))
+      .finally(() => setLoading(false));
+  }, [user, router]);
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <p>Loading course data...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <>
-  <div className="main-container">
-    <h2>Apply for Tutor or Lab Assistant Roles</h2>
-  </div>
-
-  <ApplicationForm userId={user.id} courses={courses} />
-</>
-
-  );  
+      <div className="main-container">
+        <h2>Apply for Tutor or Lab Assistant Roles</h2>
+      </div>
+      <ApplicationForm userId={user.id} courses={courses} />
+    </>
+  );
 }
