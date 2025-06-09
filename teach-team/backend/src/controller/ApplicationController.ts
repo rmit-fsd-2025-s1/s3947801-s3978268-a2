@@ -31,7 +31,6 @@ export class ApplicationController {
   async createApplication(req: Request, res: Response) {
     const { userId, courseId, role, previousRole, availability, skills, academicCredentials } = req.body;
 
-    // === Backend Validation Section ===
     if (!userId || !courseId || !role || !availability || !previousRole || !skills || !academicCredentials) {
       return res.status(400).json({ message: "All fields are required." });
     }
@@ -67,7 +66,6 @@ export class ApplicationController {
         return res.status(404).json({ message: "User or Course not found." });
       }
 
-      // === Duplicate Application Check ===
       const existing = await this.applicationRepo.findOne({
         where: {
           user: { id: userId },

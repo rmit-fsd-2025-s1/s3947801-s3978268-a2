@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToMany } from "typeorm";
 import { User } from "./User";
 import { Course } from "./Course";
-import { LecturerSelection } from "./LecturerSelection"; // ✅ ADD THIS LINE
+import { LecturerSelection } from "./LecturerSelection"; 
 
 @Entity()
 export class Application {

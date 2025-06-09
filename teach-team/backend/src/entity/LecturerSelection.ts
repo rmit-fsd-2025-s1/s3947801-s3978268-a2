@@ -16,7 +16,7 @@ export class LecturerSelection {
   application: Application;
 
   @ManyToOne(() => User, { nullable: false })
-  lecturer: User; // Only users with accountType: "lecturer"
+  lecturer: User; 
 
   @Column({ type: "text", nullable: true })
   comment: string;
