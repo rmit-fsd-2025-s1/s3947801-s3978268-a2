@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { AppDataSource } from "./data-source";
 import express from "express";
 import cors from "cors";
 import http from "http";
@@ -14,6 +15,9 @@ import { typeDefs } from "./schema";
 import { resolvers } from "./resolvers";
 
 async function start() {
+  await AppDataSource.initialize();
+  console.log("Data Source has been initialized.");
+
   const app = express();
   app.use(cors());
 

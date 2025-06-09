@@ -11,24 +11,23 @@ import styles from "../styles/CourseManagement.module.css";
 import { Link } from "react-router-dom";
 
 export default function CourseManagement() {
-  const { data: courseData, refetch: refetchCourses } = useQuery(GET_COURSES);
+  const { data: courseData, loading, error, refetch: refetchCourses } = useQuery(GET_COURSES);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
-  const { data: lecturersByCourseData, refetch: refetchLecturersByCourse } = useQuery(
-    GET_LECTURERS_BY_COURSE,
-    {
-      skip: !selectedCourse,
-      variables: { courseId: selectedCourse },
-    }
-  );
-  
+  const {
+    data: lecturersByCourseData,
+    refetch: refetchLecturersByCourse,
+  } = useQuery(GET_LECTURERS_BY_COURSE, {
+    skip: !selectedCourse,
+    variables: { courseId: selectedCourse },
+  });
+
   const [addCourse] = useMutation(ADD_COURSE);
   const [editCourse] = useMutation(EDIT_COURSE);
   const [deleteCourse] = useMutation(DELETE_COURSE);
 
   const [newCourseId, setNewCourseId] = useState("");
   const [newCourseName, setNewCourseName] = useState("");
-
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
 
   const toggleViewLecturers = async (courseId: string) => {
@@ -36,7 +35,7 @@ export default function CourseManagement() {
       setSelectedCourse(null);
     } else {
       setSelectedCourse(courseId);
-      await refetchLecturersByCourse({courseId});
+      await refetchLecturersByCourse({ courseId });
     }
   };
 
@@ -59,18 +58,12 @@ export default function CourseManagement() {
   const handleEditCourse = async (oldId: string, currentName: string) => {
     const newId = prompt("Enter new Course ID:", oldId)?.trim();
     const newName = prompt("Enter new Course Name:", currentName)?.trim();
-    
+
     if (newId === null || newName === null) return;
     if (newId === oldId && newName === currentName) return;
-    
+
     try {
-      await editCourse({
-        variables: {
-          oldId,
-          newId,
-          name: newName,
-        },
-      });
+      await editCourse({ variables: { oldId, newId, name: newName } });
       await refetchCourses();
       alert("Course updated.");
     } catch (err: any) {
@@ -91,6 +84,7 @@ export default function CourseManagement() {
     }
   };
 
+  console.log("Course Data:", courseData);
 
   return (
     <div className={styles.container}>
@@ -117,6 +111,9 @@ export default function CourseManagement() {
         />
         <button onClick={handleAddCourse}>Add Course</button>
       </section>
+
+      {loading && <p>Loading courses...</p>}
+      {error && <p style={{ color: "red" }}>Error loading courses: {error.message}</p>}
 
       <table className={styles.table}>
         <thead>

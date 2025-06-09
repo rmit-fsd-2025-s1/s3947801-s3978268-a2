@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryColumn, ManyToMany } from "typeorm";
+import { Entity, Column, PrimaryColumn, ManyToMany, OneToMany } from "typeorm";
 import { User } from "./User";
+import { Application } from "./Application";
 
 @Entity()
 export class Course {
@@ -11,4 +12,7 @@ export class Course {
 
   @ManyToMany(() => User, (user) => user.courses)
   lecturers: User[];
+
+  @OneToMany(() => Application, (application) => application.course)
+  applications: Application[]; 
 }

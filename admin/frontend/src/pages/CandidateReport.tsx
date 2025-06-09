@@ -1,42 +1,56 @@
 import {
-    CANDIDATES_BY_COURSE,
-    CANDIDATES_WITH_MANY_COURSES,
-    CANDIDATES_NOT_CHOSEN,
-    GET_COURSES,
+  GET_COURSES,
+  CANDIDATES_WITH_MANY_COURSES,
+  CANDIDATES_NEVER_SELECTED,
+  SELECTED_CANDIDATES_BY_COURSE,
 } from "../graphql/queries";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@apollo/client";
 import styles from "../styles/CandidateReport.module.css";
 import { Link } from "react-router-dom";
 
 export default function CandidateReport() {
   const { data: courseData } = useQuery(GET_COURSES);
-  const { data: manyCoursesData } = useQuery(CANDIDATES_WITH_MANY_COURSES);
-  const { data: notChosenData } = useQuery(CANDIDATES_NOT_CHOSEN);
+  const { data: manyCoursesData } = useQuery(CANDIDATES_WITH_MANY_COURSES, {
+    variables: { minCourses: 3 },
+  });
+  const { data: notChosenData } = useQuery(CANDIDATES_NEVER_SELECTED);
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <h1>Candidate Reports</h1>
-        <Link to="/dashboard" className={styles.backLink}>← Back to Dashboard</Link>
+        <Link to="/dashboard" className={styles.backLink}>
+          ← Back to Dashboard
+        </Link>
       </header>
 
       <div className={styles.section}>
         <h2>Chosen Candidates for Each Course</h2>
-        {courseData?.courses.map((course: any) => (
-          <CourseCandidates key={course.id} courseId={course.id} courseName={course.name} />
-        ))}
+        {isMounted &&
+          courseData?.courses.map((course: any) => (
+            <CourseCandidates
+              key={course.id}
+              courseId={course.id}
+              courseName={course.name}
+            />
+          ))}
       </div>
 
       <div className={styles.section}>
         <h2>Candidates Chosen for More Than 3 Courses</h2>
         <ul>
-          {manyCoursesData?.candidatesWithManyCourses.length ? (
+          {isMounted && manyCoursesData?.candidatesWithManyCourses.length ? (
             manyCoursesData.candidatesWithManyCourses.map((user: any) => (
               <li key={user.id}>{user.email}</li>
             ))
           ) : (
-            <li className={styles.empty}>No candidates found.</li>
+            isMounted && (
+              <li className={styles.empty}>No candidates found.</li>
+            )
           )}
         </ul>
       </div>
@@ -44,12 +58,14 @@ export default function CandidateReport() {
       <div className={styles.section}>
         <h2>Candidates Not Chosen for Any Course</h2>
         <ul>
-          {notChosenData?.candidatesNotChosen.length ? (
-            notChosenData.candidatesNotChosen.map((user: any) => (
+          {isMounted && notChosenData?.candidatesNeverSelected.length ? (
+            notChosenData.candidatesNeverSelected.map((user: any) => (
               <li key={user.id}>{user.email}</li>
             ))
           ) : (
-            <li className={styles.empty}>No unchosen candidates.</li>
+            isMounted && (
+              <li className={styles.empty}>No unchosen candidates.</li>
+            )
           )}
         </ul>
       </div>
@@ -57,19 +73,36 @@ export default function CandidateReport() {
   );
 }
 
-function CourseCandidates({ courseId, courseName }: { courseId: string; courseName: string }) {
-  const { data } = useQuery(CANDIDATES_BY_COURSE, { variables: { courseId } });
+function CourseCandidates({
+  courseId,
+  courseName,
+}: {
+  courseId: string;
+  courseName: string;
+}) {
+  const { data } = useQuery(SELECTED_CANDIDATES_BY_COURSE, {
+    variables: { courseId },
+  });
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
 
   return (
     <div className={styles.card}>
-      <h3>{courseName} ({courseId})</h3>
+      <h3>
+        {courseName} ({courseId})
+      </h3>
       <ul>
-        {data?.candidatesByCourse?.length ? (
-          data.candidatesByCourse.map((user: any) => (
+        {isMounted && data?.selectedCandidatesByCourse?.length ? (
+          data.selectedCandidatesByCourse.map((user: any) => (
             <li key={user.id}>{user.email}</li>
           ))
         ) : (
-          <li className={styles.empty}>No candidates selected for this course.</li>
+          isMounted && (
+            <li className={styles.empty}>
+              No candidates selected for this course.
+            </li>
+          )
         )}
       </ul>
     </div>

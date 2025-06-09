@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import router from "next/router";
 import { Application } from "../types/types";
+
 export default function ApplicationsPage() {
   const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -63,7 +64,7 @@ export default function ApplicationsPage() {
 
           <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
             <option value="">All Roles</option>
-            <option value="candidate">Candidate</option>
+            <option value="tutor">Tutor</option>
             <option value="lab assistant">Lab Assistant</option>
           </select>
         </div>
@@ -96,14 +97,38 @@ export default function ApplicationsPage() {
                 <tr key={app.id}>
                   <td className="role">{app.role}</td>
                   <td className="course-name">{app.course?.name || app.course.name}</td>
-                  <td className="previous-role"><div className="scrollable-cell">{app.previousRole}</div></td>
-                  <td className="availability"><div className="scrollable-cell">{app.availability}</div></td>
-                  <td className="skills"><div className="scrollable-cell">{app.skills}</div></td>
-                  <td className="academic-credentials"><div className="scrollable-cell">{app.academicCredentials}</div></td>
+                  <td className="previous-role">
+                    <div className="scrollable-cell">{app.previousRole}</div>
+                  </td>
+                  <td className="availability">
+                    <div className="scrollable-cell">{app.availability}</div>
+                  </td>
+                  <td className="skills">
+                    <div className="scrollable-cell">{app.skills}</div>
+                  </td>
+                  <td className="academic-credentials">
+                    <div className="scrollable-cell">{app.academicCredentials}</div>
+                  </td>
                   <td className="status">{app.status || "Pending"}</td>
-                  <td className="created-at">{new Date(app.date_applied).toLocaleDateString()}</td>
+                  <td className="created-at">
+                    {app.createdAt && !isNaN(new Date(app.createdAt).getTime()) ? (
+                      new Date(app.createdAt).toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZoneName: "short",
+                      })
+                    ) : (
+                      "Unknown"
+                    )}
+                  </td>
                   <td className="action">
-                    <button onClick={() => handleDelete(app.id.toString())} className="delete-button">
+                    <button
+                      onClick={() => handleDelete(app.id.toString())}
+                      className="delete-button"
+                    >
                       Delete
                     </button>
                   </td>

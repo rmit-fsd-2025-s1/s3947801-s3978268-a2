@@ -10,15 +10,15 @@ export const userService = {
     accountType: "lecturer" | "candidate";
   }): Promise<User> => {
     const res = await axios.post<User>(`${API_BASE_URL}/user`, user);
-    return res.data; // This will be your new user (without password)
+    return res.data;
   },
 
   login: async (credentials: { email: string; password: string }): Promise<User> => {
     const res = await axios.post<User>(`${API_BASE_URL}/user/login`, credentials);
     return res.data;
   },
-  
-  getCoursesByUser: async (userId: number) => {
+
+  getCoursesByUser: async (userId: number): Promise<Course[]> => {
     const res = await axios.get<Course[]>(`${API_BASE_URL}/user/courses`, {
       params: { userId },
     });
@@ -27,36 +27,38 @@ export const userService = {
 };
 
 export const applicationService = {
-
-    getApplications: async (courseIds: number[]): Promise<Application[]> => {
+  getApplications: async (courseIds: (number | string)[]): Promise<Application[]> => {
+    const stringIds = courseIds.map(id => id.toString());
     const res = await axios.get<Application[]>(`${API_BASE_URL}/applications`, {
-      params: { courseIds: courseIds.join(",") },
+      params: { courseIds: stringIds.join(",") },
     });
     return res.data;
   },
 };
 
 export const CourseService = {
-
+  getAllCourses: async (): Promise<Course[]> => {
+    const res = await axios.get<Course[]>(`${API_BASE_URL}/courses`);
+    return res.data;
+  },
 };
 
 export const LecturerSelectionService = {
-
-    getSelectionsByLecturer: async (lecturerId: number): Promise<LecturerSelection[]> => {
+  getSelectionsByLecturer: async (lecturerId: number): Promise<LecturerSelection[]> => {
     const res = await axios.get<LecturerSelection[]>(`${API_BASE_URL}/lecturerSelections`, {
       params: { lecturerId },
     });
     return res.data;
   },
 
-    getPendingSelections: async (lecturerId: number): Promise<LecturerSelection[]> => {
+  getPendingSelections: async (lecturerId: number): Promise<LecturerSelection[]> => {
     const res = await axios.get<LecturerSelection[]>(`${API_BASE_URL}/lecturerSelections/pending`, {
       params: { lecturerId },
     });
     return res.data;
   },
 
-    upsertSelection: async (selection: {
+  upsertSelection: async (selection: {
     applicationId: number;
     lecturerId: number;
     comment?: string;
@@ -65,14 +67,11 @@ export const LecturerSelectionService = {
     const res = await axios.post<LecturerSelection>(`${API_BASE_URL}/lecturerSelections`, selection);
     return res.data;
   },
-
 };
 
 export const VisualService = {
   getVisualStats: async () => {
     const res = await axios.get(`${API_BASE_URL}/visualStats`);
     return res.data;
-  }
+  },
 };
-
-

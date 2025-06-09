@@ -811,3 +811,25 @@ th.academic-credentials {
 .app-content {
   flex: 1;
 }
+
+.blocked-row {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: #ffe6e6 !important;
+}
+
+.blocked-row td {
+  color: #888 !important;
+}
+
+.unavailable-label {
+  color: red;
+  font-weight: bold;
+  margin-left: 0.5em;
+}
+
+.field-error {
+  color: red;
+  font-size: 0.9em;
+  margin-top: 4px;
+}

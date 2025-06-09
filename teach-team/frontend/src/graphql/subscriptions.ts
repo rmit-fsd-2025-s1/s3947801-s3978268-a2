@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
-export const CANDIDATE_UNAVAILABLE_SUBSCRIPTION = gql`
+export const CANDIDATE_STATUS_CHANGED_SUBSCRIPTION = gql`
   subscription {
-    candidateUnavailable {
+    candidateStatusChanged {
       id
       email
       blocked

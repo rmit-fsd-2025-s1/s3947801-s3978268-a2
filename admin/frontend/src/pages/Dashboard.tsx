@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { GET_USERS } from "../graphql/queries";
 import styles from "../styles/Dashboard.module.css";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const BLOCK_CANDIDATE = gql`
   mutation BlockCandidate($userId: ID!, $block: Boolean!) {
@@ -12,7 +18,6 @@ const BLOCK_CANDIDATE = gql`
     }
   }
 `;
-
 
 export default function Dashboard() {
   const [filterRole, setFilterRole] = useState("");
@@ -32,32 +37,23 @@ export default function Dashboard() {
 
   const [blockCandidate] = useMutation(BLOCK_CANDIDATE);
 
-const handleBlockToggle = async (id: number, currentlyBlocked: boolean) => {
-  try {
-    const res = await blockCandidate({
-      variables: {
-        userId: id.toString(),
-        block: !currentlyBlocked,
-      },
-    });
-    console.log("Mutation response:", res);
-    await refetch({
-      accountType: filterRole || undefined,
-      blocked: parsedBlocked,
-    });
-  } catch (error: any) {
-    console.error("Block mutation failed:", error);
-    if (error.networkError?.result?.errors) {
-      console.error("GraphQL Errors:", error.networkError.result.errors);
+  const handleBlockToggle = async (id: number, currentlyBlocked: boolean) => {
+    try {
+      const res = await blockCandidate({
+        variables: {
+          userId: id.toString(),
+          block: !currentlyBlocked,
+        },
+      });
+      console.log("Mutation response:", res);
+      await refetch(filterVars);
+    } catch (error: any) {
+      console.error("Block mutation failed:", error);
+      if (error.networkError?.result?.errors) {
+        console.error("GraphQL Errors:", error.networkError.result.errors);
+      }
     }
-  }
-};
-
-
-  const dateFormatter = new Intl.DateTimeFormat("en-AU", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  };
 
   return (
     <div className={styles["dashboard-container"]}>
@@ -104,24 +100,34 @@ const handleBlockToggle = async (id: number, currentlyBlocked: boolean) => {
           </tr>
         </thead>
         <tbody>
-          {data?.users?.map((user: any) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.password}</td>
-              <td>{user.email}</td>
-              <td>{user.accountType}</td>
-              <td>{dateFormatter.format(Number(user.date_joined))}</td>
-              <td>{user.blocked ? "Blocked" : "Active"}</td>
-              <td>
-                <button
-                  className={`${styles["block-btn"]} ${user.blocked ? styles["unblock-btn"] : ""}`}
-                  onClick={() => handleBlockToggle(user.id, user.blocked)}
-                >
-                  {user.blocked ? "Unblock" : "Block"}
-                </button>
-              </td>
-            </tr>
-          ))}
+          {data?.users?.map((user: any) => {
+            const zone = dayjs.tz.guess(); // dynamically detect browser timezone
+            const formattedDate = dayjs.utc(user.date_joined)
+              .tz(zone)
+              .format("D MMM YYYY, h:mm A") + ` (${zone})`;
+
+
+            return (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.password}</td>
+                <td>{user.email}</td>
+                <td>{user.accountType}</td>
+                <td>{formattedDate}</td>
+                <td>{user.blocked ? "Blocked" : "Active"}</td>
+                <td>
+                  {user.accountType === "candidate" && (
+                    <button
+                      className={`${styles["block-btn"]} ${user.blocked ? styles["unblock-btn"] : ""}`}
+                      onClick={() => handleBlockToggle(user.id, user.blocked)}
+                    >
+                      {user.blocked ? "Unblock" : "Block"}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

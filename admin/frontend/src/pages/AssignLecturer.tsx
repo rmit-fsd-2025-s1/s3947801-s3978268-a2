@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_USERS, GET_COURSES, ASSIGN_LECTURER } from "../graphql/queries";
+import {
+  GET_USERS,
+  GET_COURSES,
+  ASSIGN_LECTURER,
+  UNASSIGN_LECTURER,
+} from "../graphql/queries";
 import styles from "../styles/AssignLecturer.module.css";
 import { Link } from "react-router-dom";
 
@@ -28,13 +33,35 @@ export default function AssignLecturer() {
     onError: (err) => alert("Failed to assign lecturer: " + err.message),
   });
 
+  const [unassignLecturer] = useMutation(UNASSIGN_LECTURER, {
+    onCompleted: async () => {
+      alert("Lecturer unassigned successfully!");
+      await refetchCourses();
+    },
+    onError: (err) => alert("Failed to unassign lecturer: " + err.message),
+  });
+
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLecturerId || !selectedCourseId) {
       alert("Please select both a lecturer and a course.");
       return;
     }
-    await assignLecturer({ variables: { userId: selectedLecturerId, courseId: selectedCourseId } });
+    await assignLecturer({
+      variables: { userId: parseInt(selectedLecturerId), courseId: selectedCourseId },
+    });
+  };
+
+  const handleUnassign = async (lecturerId: number, courseId: string) => {
+    const confirmed = window.confirm("Are you sure you want to unassign this lecturer?");
+    if (!confirmed) return;
+    await unassignLecturer({
+      variables: {
+        userId: Number(lecturerId),  
+        courseId: String(courseId),  
+      },
+    });
+
   };
 
   useEffect(() => {
@@ -88,6 +115,32 @@ export default function AssignLecturer() {
           Assign
         </button>
       </form>
+
+      <div className={styles.assignmentTable}>
+        <h2>Current Lecturer Assignments</h2>
+        {coursesData?.courses.map((course: any) => (
+          <div key={course.id} className={styles.courseBlock}>
+            <h3>{course.name}</h3>
+            <ul>
+              {course.lecturers?.length > 0 ? (
+                course.lecturers.map((lec: any) => (
+                  <li key={lec.id}>
+                    {lec.email}
+                    <button
+                      onClick={() => handleUnassign(lec.id, course.id)}
+                      className={styles.unassignBtn}
+                    >
+                      Unassign
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <li>No lecturers assigned</li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

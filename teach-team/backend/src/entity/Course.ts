@@ -16,7 +16,7 @@ export class Course {
   name: string;
 
   // Lecturers assigned to this course
-  @ManyToMany(() => User)
+  @ManyToMany(() => User, user => user.courses)
   @JoinTable()
   lecturers: User[];
 }

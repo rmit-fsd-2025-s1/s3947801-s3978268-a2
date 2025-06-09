@@ -1,97 +1,142 @@
-// resolvers.ts
-import db from "./db";
+import { AppDataSource as db } from "./data-source";
+import { User } from "./entity/User";
+import { Course } from "./entity/Course";
+import { LecturerSelection } from "./entity/LecturerSelection";
 import { pubsub } from "./pubsub";
+import { In } from "typeorm";
 
 export const resolvers = {
   Query: {
     users: async (_: any, args: { accountType?: string; blocked?: boolean }) => {
-      let query = "SELECT * FROM user WHERE 1=1";
-      const params: any[] = [];
+      const qb = db.getRepository(User).createQueryBuilder("user");
 
       if (args.accountType) {
-        query += " AND accountType = ?";
-        params.push(args.accountType);
+        qb.andWhere("user.accountType = :accountType", { accountType: args.accountType });
       }
 
       if (typeof args.blocked === "boolean") {
-        query += " AND blocked = ?";
-        params.push(args.blocked ? 1 : 0);
+        qb.andWhere("user.blocked = :blocked", { blocked: args.blocked });
       }
 
-      const [rows] = await db.query(query, params);
-      return rows;
+      return await qb.getMany();
     },
 
     courses: async () => {
-      const [rows] = await db.query("SELECT * FROM course");
-      return rows;
+      return await db.getRepository(Course).find({ relations: ["lecturers"] });
     },
 
-    candidatesByCourse: async (_: any, { courseId }: { courseId: string }) => {
-      const [rows] = await db.query(
-        `SELECT u.* FROM user u
-         JOIN application a ON u.id = a.userId
-         JOIN lecturer_selection ls ON a.id = ls.applicationId
-         WHERE a.courseId = ? AND u.accountType = 'candidate'`,
-        [courseId]
-      );
-      return rows;
+    selectedCandidatesByCourse: async (_: any, { courseId }: { courseId: string }) => {
+      const selections = await db
+        .getRepository(LecturerSelection)
+        .createQueryBuilder("selection")
+        .leftJoinAndSelect("selection.application", "application")
+        .leftJoinAndSelect("application.user", "user")
+        .leftJoinAndSelect("application.course", "course")
+        .where("course.id = :courseId", { courseId })
+        .getMany();
+
+      return selections.map((sel) => sel.application.user);
     },
 
-    candidatesWithManyCourses: async (_: any, { minCourses }: { minCourses: number }) => {
-      const [rows] = await db.query(
-        `SELECT u.*, COUNT(DISTINCT a.courseId) as courseCount
-         FROM user u
-         JOIN application a ON u.id = a.userId
-         JOIN lecturer_selection ls ON ls.applicationId = a.id
-         WHERE u.accountType = 'candidate'
-         GROUP BY u.id
-         HAVING courseCount > ?`,
-        [minCourses]
-      );
-      return rows;
+
+
+
+
+    candidatesWithMoreThan3Selections: async () => {
+      const subQuery = db
+        .getRepository(LecturerSelection)
+        .createQueryBuilder("selection")
+        .innerJoin("selection.application", "application")
+        .innerJoin("application.user", "user")
+        .select("user.email", "email")
+        .addSelect("COUNT(*)", "count")
+        .groupBy("user.email")
+        .having("COUNT(*) > 3");
+
+      const rows = await subQuery.getRawMany();
+
+      const emails = rows.map((r) => r.email);
+
+      return db.getRepository(User).find({
+        where: { email: In(emails) },
+      });
     },
 
-    candidatesNotChosen: async () => {
-      const [rows] = await db.query(
-        `SELECT DISTINCT u.*
-         FROM user u
-         JOIN application a ON u.id = a.userId
-         WHERE u.accountType = 'candidate'
-           AND u.id NOT IN (
-             SELECT u2.id
-             FROM user u2
-             JOIN application a2 ON u2.id = a2.userId
-             JOIN lecturer_selection ls ON ls.applicationId = a2.id
-           )`
+
+    candidatesNeverSelected: async () => {
+      const allApplicants = await db.getRepository(User).find({
+        where: { accountType: "candidate" },
+        relations: ["applications"],
+      });
+
+      const selectedAppIds = new Set<number>();
+      const selections = await db.getRepository(LecturerSelection).find({
+        relations: ["application"],
+      });
+      selections.forEach((sel) => selectedAppIds.add(sel.application.id));
+
+      const unselectedUsers = allApplicants.filter((user) =>
+        user.applications.every((app) => !selectedAppIds.has(app.id))
       );
-      return rows;
+
+      return unselectedUsers;
     },
 
     lecturersByCourse: async (_: any, { courseId }: { courseId: string }) => {
-      const [rows] = await db.query(
-        `SELECT u.*
-         FROM user u
-         JOIN user_courses_course uc ON u.id = uc.userId
-         WHERE uc.courseId = ? AND u.accountType = 'lecturer'`,
-        [courseId]
-      );
-      return rows;
+      const course = await db.getRepository(Course).findOne({
+        where: { id: courseId },
+        relations: ["lecturers"],
+      });
+      return course?.lecturers || [];
+    },
+
+    debugCandidateCourses: async () => {
+      const candidate = await db.getRepository(User).findOne({
+        where: { email: "thisisatest@rmit.edu.vn" },
+        relations: ["courses"],
+      });
+      console.log("DEBUG Candidate with courses:", candidate);
+      if (!candidate) return "Candidate not found";
+      return `${candidate.email} has ${candidate.courses.length} courses.`;
     },
   },
 
   Mutation: {
     assignLecturerToCourse: async (_: any, { userId, courseId }: { userId: number; courseId: string }) => {
-      await db.query(
-        "INSERT INTO user_courses_course (userId, courseId) VALUES (?, ?)",
-        [userId, courseId]
-      );
+      const courseRepo = db.getRepository(Course);
+      const userRepo = db.getRepository(User);
+
+      const course = await courseRepo.findOne({ where: { id: courseId }, relations: ["lecturers"] });
+      const lecturer = await userRepo.findOne({ where: { id: userId } });
+
+      if (course && lecturer) {
+        course.lecturers.push(lecturer);
+        await courseRepo.save(course);
+      }
+      return true;
+    },
+
+    unassignLecturerFromCourse: async (_: any, { userId, courseId }: { userId: number; courseId: string }) => {
+      const courseRepo = db.getRepository(Course);
+      const course = await courseRepo.findOne({ where: { id: courseId }, relations: ["lecturers"] });
+
+      if (course && Array.isArray(course.lecturers)) {
+        const originalLength = course.lecturers.length;
+        course.lecturers = course.lecturers.filter((lec) => lec.id !== userId);
+
+        if (course.lecturers.length !== originalLength) {
+          await courseRepo.save(course);
+        }
+      }
+
+
       return true;
     },
 
     addCourse: async (_: any, { id, name }: { id: string; name: string }) => {
-      await db.query("INSERT INTO course (id, name) VALUES (?, ?)", [id, name]);
-      return { id, name };
+      const course = db.getRepository(Course).create({ id, name });
+      await db.getRepository(Course).save(course);
+      return course;
     },
 
     editCourse: async (_: any, { oldId, newId, name }: { oldId: string; newId: string; name: string }) => {
@@ -107,48 +152,38 @@ export const resolvers = {
         [id]
       );
       await db.query("DELETE FROM application WHERE courseId = ?", [id]);
-      await db.query("DELETE FROM user_courses_course WHERE courseId = ?", [id]);
-      await db.query("DELETE FROM course WHERE id = ?", [id]);
+      await db.getRepository(Course).delete(id);
       return true;
     },
 
     blockCandidate: async (_: any, { userId, block }: { userId: string; block: boolean }) => {
-      const numericId = parseInt(userId, 10);  // 🔧 convert string to number
+      const userRepo = db.getRepository(User);
+      const user = await userRepo.findOneBy({ id: parseInt(userId) });
+      if (!user) throw new Error("User not found");
 
-      await db.query("UPDATE user SET blocked = ? WHERE id = ?", [block ? 1 : 0, numericId]);
+      user.blocked = block;
+      await userRepo.save(user);
 
-      const [rows]: any = await db.query("SELECT * FROM user WHERE id = ?", [numericId]);
-      const updatedUser = rows[0];
+      await pubsub.publish("CANDIDATE_STATUS_CHANGED", {
+        candidateStatusChanged: user,
+      });
 
-      if (block) {
-        await pubsub.publish("CANDIDATE_UNAVAILABLE", {
-          candidateUnavailable: updatedUser,
-        });
-      }
-
-      return updatedUser;
+      return user;
     },
 
-
-
     loginAdmin: async (_: any, { email, password }: { email: string; password: string }) => {
-      const [rows]: any = await db.query(
-        'SELECT * FROM user WHERE BINARY email = ? AND BINARY password = ? AND accountType = "admin"',
-        [email, password]
-      );
-
-      if (rows.length === 1) {
+      const userRepo = db.getRepository(User);
+      const user = await userRepo.findOneBy({ email, password });
+      if (user && user.accountType === "admin") {
         return { token: "mock-admin-token-123" };
       }
-
       throw new Error("Invalid credentials");
     },
   },
 
   Subscription: {
-    candidateUnavailable: {
-      subscribe: () => pubsub.asyncIterableIterator("CANDIDATE_UNAVAILABLE"),
+    candidateStatusChanged: {
+      subscribe: () => pubsub.asyncIterableIterator("CANDIDATE_STATUS_CHANGED"),
     },
   },
-
 };

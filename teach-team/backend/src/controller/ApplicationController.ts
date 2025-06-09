@@ -31,22 +31,65 @@ export class ApplicationController {
   async createApplication(req: Request, res: Response) {
     const { userId, courseId, role, previousRole, availability, skills, academicCredentials } = req.body;
 
+    // === Backend Validation Section ===
+    if (!userId || !courseId || !role || !availability || !previousRole || !skills || !academicCredentials) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const validRoles = ["tutor", "lab assistant"];
+    const validAvailability = ["Full-time", "Part-time"];
+
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role provided." });
+    }
+
+    if (!validAvailability.includes(availability)) {
+      return res.status(400).json({ message: "Invalid availability provided." });
+    }
+
+    const wordLimit = 100;
+    const checkWordCount = (text: string) =>
+      text.trim().split(/\s+/).filter(Boolean).length <= wordLimit;
+
+    if (
+      !checkWordCount(previousRole) ||
+      !checkWordCount(skills) ||
+      !checkWordCount(academicCredentials)
+    ) {
+      return res.status(400).json({ message: "Each text field must be under 100 words." });
+    }
+
     try {
       const user = await AppDataSource.getRepository(User).findOneBy({ id: userId });
       const course = await AppDataSource.getRepository(Course).findOneBy({ id: courseId });
 
       if (!user || !course) {
-        return res.status(404).json({ message: "User or Course not found" });
+        return res.status(404).json({ message: "User or Course not found." });
+      }
+
+      // === Duplicate Application Check ===
+      const existing = await this.applicationRepo.findOne({
+        where: {
+          user: { id: userId },
+          course: { id: courseId },
+        },
+        relations: ["user", "course"],
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          message: "You have already submitted an application for this course.",
+        });
       }
 
       const application = this.applicationRepo.create({
         user,
         course,
         role,
-        previousRole,
-        availability,
-        skills,
-        academicCredentials,
+        previousRole: previousRole.trim(),
+        availability: availability.trim(),
+        skills: skills.trim(),
+        academicCredentials: academicCredentials.trim(),
         status: "Pending",
       });
 
@@ -55,6 +98,7 @@ export class ApplicationController {
 
       res.status(201).json(application);
     } catch (error) {
+      console.error("Server error while creating application:", error);
       res.status(500).json({ message: "Error creating application", error });
     }
   }
@@ -66,25 +110,24 @@ export class ApplicationController {
     }
 
     try {
+      console.log("Fetching applications for userId:", userId);
       const { status, role } = req.query;
 
-      const whereClause: any = {
-        user: { id: userId },
-      };
+      const qb = this.applicationRepo
+        .createQueryBuilder("application")
+        .leftJoinAndSelect("application.user", "user")
+        .leftJoinAndSelect("application.course", "course")
+        .where("user.id = :userId", { userId });
 
       if (status) {
-        whereClause.status = String(status).trim();
+        qb.andWhere("application.status = :status", { status: String(status).trim() });
       }
+
       if (role) {
-        whereClause.role = String(role).trim();
-      }      
+        qb.andWhere("application.role = :role", { role: String(role).trim() });
+      }
 
-      const applications = await this.applicationRepo.find({
-        where: whereClause,
-        relations: ["course", "user"],
-      });
-
-
+      const applications = await qb.getMany();
       res.json(applications);
     } catch (error) {
       res.status(500).json({ message: "Error fetching applications for user", error });
@@ -106,7 +149,4 @@ export class ApplicationController {
       res.status(500).json({ message: "Error deleting application", error });
     }
   }
-
 }
-
-

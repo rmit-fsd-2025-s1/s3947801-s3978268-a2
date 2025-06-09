@@ -18,6 +18,11 @@ export const GET_COURSES = gql`
     courses {
       id
       name
+      lecturers {
+        id
+        email
+        accountType
+      }
     }
   }
 `;
@@ -52,6 +57,12 @@ export const ASSIGN_LECTURER = gql`
   }
 `;
 
+export const UNASSIGN_LECTURER = gql`
+  mutation UnassignLecturerFromCourse($userId: Int!, $courseId: String!) {
+    unassignLecturerFromCourse(userId: $userId, courseId: $courseId)
+  }
+`;
+
 export const GET_LECTURERS_BY_COURSE = gql`
   query LecturersByCourse($courseId: ID!) {
     lecturersByCourse(courseId: $courseId) {
@@ -62,9 +73,9 @@ export const GET_LECTURERS_BY_COURSE = gql`
   }
 `;
 
-export const CANDIDATES_BY_COURSE = gql`
-  query CandidatesByCourse($courseId: ID!) {
-    candidatesByCourse(courseId: $courseId) {
+export const SELECTED_CANDIDATES_BY_COURSE = gql`
+  query SelectedCandidatesByCourse($courseId: ID!) {
+    selectedCandidatesByCourse(courseId: $courseId) {
       id
       email
     }
@@ -80,12 +91,11 @@ export const CANDIDATES_WITH_MANY_COURSES = gql`
   }
 `;
 
-export const CANDIDATES_NOT_CHOSEN = gql`
-  query {
-    candidatesNotChosen {
+export const CANDIDATES_NEVER_SELECTED = gql`
+  query CandidatesNeverSelected {
+    candidatesNeverSelected {
       id
       email
     }
   }
 `;
-
