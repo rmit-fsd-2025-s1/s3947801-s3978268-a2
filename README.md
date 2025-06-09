@@ -1,4 +1,4 @@
-# Admin Dashboard – COSC2758 Assignment 2  
+# COSC2758 Assignment 2  
 **Repository: s3947801-s3978268-a2**
 
 This is the **Admin Dashboard** frontend for a fullstack web application built for Assignment 2 in COSC2758 at RMIT. It allows admin users to manage candidate users, courses, lecturer assignments, and block/unblock candidate accounts in real-time.
@@ -6,6 +6,8 @@ This is the **Admin Dashboard** frontend for a fullstack web application built f
 Built with **React**, **TypeScript**, **Apollo Client**, and **CSS Modules**, and connected to a GraphQL backend.
 
 ---
+
+### Note: The ERD (Task PA a ) is placed inside the teach-team/backend, as per assignment instructions.
 
 ## Setup Instructions
 
